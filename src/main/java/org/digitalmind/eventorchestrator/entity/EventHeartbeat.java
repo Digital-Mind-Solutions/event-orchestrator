@@ -5,8 +5,8 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.digitalmind.buildingblocks.core.jpaauditor.entity.ContextAuditModel;
-import org.digitalmind.buildingblocks.core.jpaauditor.entity.IdModel;
+import org.digitalmind.buildingblocks.core.jpautils.entity.ContextAuditModel;
+import org.digitalmind.buildingblocks.core.jpautils.entity.IdModel;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;

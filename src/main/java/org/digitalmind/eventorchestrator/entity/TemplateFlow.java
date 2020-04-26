@@ -8,8 +8,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.digitalmind.buildingblocks.core.jpaauditor.entity.ContextVersionableAuditModel;
-import org.digitalmind.buildingblocks.core.jpaauditor.entity.IdModel;
+import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
+import org.digitalmind.buildingblocks.core.jpautils.entity.IdModel;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;

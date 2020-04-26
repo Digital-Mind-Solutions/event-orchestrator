@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
-import org.digitalmind.buildingblocks.core.jpaauditor.entity.ContextVersionableAuditModel;
+import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
 import org.digitalmind.eventorchestrator.enumeration.EventDirectiveType;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 

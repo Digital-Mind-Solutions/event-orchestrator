@@ -1,4 +1,4 @@
-package org.digitalmind.eventorchestrator.converter;
+package org.digitalmind.eventorchestrator.entity.converter;
 
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
 
