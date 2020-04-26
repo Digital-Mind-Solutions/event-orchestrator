@@ -22,7 +22,7 @@ bootJar {
     enabled = false
 }
 jar {
-    archiveBaseName = "eventorchestrator"
+    archiveBaseName = "event-orchestrator"
     enabled = true
 }
 
