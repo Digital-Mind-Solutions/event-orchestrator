@@ -26,7 +26,14 @@ jar {
     enabled = true
 }
 
+dependencyManagement {
+    imports {
+        mavenBom 'org.springframework.cloud:spring-cloud-dependencies:Greenwich.SR5'
+    }
+}
+
 repositories {
+    mavenLocal()
     mavenCentral()
     maven {
         name = "digitalmind"

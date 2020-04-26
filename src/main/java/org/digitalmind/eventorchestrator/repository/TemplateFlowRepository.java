@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface TemplateFlowRepository extends JpaRepository<TemplateFlow, Long> {
 
-    List<TemplateFlow> findBySignTemplateOrderById(String signTemplate);
+    List<TemplateFlow> findByFlowTemplateOrderById(String flowTemplate);
 
 }
