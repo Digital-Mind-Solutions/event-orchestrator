@@ -162,7 +162,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             @Override
             public List<String> load(String key) {
                 if (key == null) return null;
-                List<TemplateFlow> templateFlowList = tfs.findBySignTemplateOrderById(key);
+                List<TemplateFlow> templateFlowList = tfs.findByFlowTemplateOrderById(key);
                 List<String> usecases = templateFlowList.stream().map(templateFlow -> templateFlow.getUsecase()).collect(Collectors.toList());
                 usecases.add("*");
                 return usecases;

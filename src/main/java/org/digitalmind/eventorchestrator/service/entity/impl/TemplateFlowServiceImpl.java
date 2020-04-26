@@ -24,8 +24,8 @@ public class TemplateFlowServiceImpl implements TemplateFlowService {
 
     @Override
     @Transactional(readOnly = true, propagation = Propagation.NOT_SUPPORTED)
-    public List<TemplateFlow> findBySignTemplateOrderById(String signTemplate) {
-        return templateFlowRepository.findByFlowTemplateOrderById(signTemplate);
+    public List<TemplateFlow> findByFlowTemplateOrderById(String flowTemplate) {
+        return templateFlowRepository.findByFlowTemplateOrderById(flowTemplate);
     }
 
 }

@@ -6,6 +6,6 @@ import java.util.List;
 
 public interface TemplateFlowService {
 
-    List<TemplateFlow> findBySignTemplateOrderById(String signTemplate);
+    List<TemplateFlow> findByFlowTemplateOrderById(String signTemplate);
 
 }
