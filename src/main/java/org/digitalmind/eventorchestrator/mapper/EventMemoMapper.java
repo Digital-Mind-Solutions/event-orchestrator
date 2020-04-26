@@ -2,6 +2,7 @@ package org.digitalmind.eventorchestrator.mapper;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.digitalmind.buildingblocks.core.dtobase.expand.MappingContext;
 import org.digitalmind.buildingblocks.templating.templatingcore.dto.TemplateIdentifier;
 import org.digitalmind.buildingblocks.templating.templatingcore.dto.TemplateResult;
 import org.digitalmind.buildingblocks.templating.templatingcore.service.TemplateService;
@@ -13,7 +14,6 @@ import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.data.mapping.context.MappingContext;
 
 import java.util.HashMap;
 import java.util.Locale;
