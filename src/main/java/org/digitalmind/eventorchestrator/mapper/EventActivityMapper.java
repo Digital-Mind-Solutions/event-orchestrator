@@ -2,9 +2,9 @@ package org.digitalmind.eventorchestrator.mapper;
 
 import org.apache.commons.io.IOUtils;
 import org.digitalmind.buildingblocks.core.dtobase.expand.MappingContext;
-import org.digitalmind.buildingblocks.templating.templatingcore.dto.TemplateIdentifier;
-import org.digitalmind.buildingblocks.templating.templatingcore.dto.TemplateResult;
-import org.digitalmind.buildingblocks.templating.templatingcore.service.TemplateService;
+import org.digitalmind.buildingblocks.templating.core.template.dto.TemplateIdentifier;
+import org.digitalmind.buildingblocks.templating.core.template.dto.TemplateResult;
+import org.digitalmind.buildingblocks.templating.core.template.service.TemplateService;
 import org.digitalmind.eventorchestrator.dto.EventActivityDTO;
 import org.digitalmind.eventorchestrator.dto.base.IMapper;
 import org.digitalmind.eventorchestrator.entity.EventActivity;
