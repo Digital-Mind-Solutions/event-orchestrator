@@ -7,12 +7,10 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.apache.commons.lang3.time.DateUtils;
 import org.digitalmind.buildingblocks.core.beanutils.service.SpringBeanUtil;
-import org.digitalmind.buildingblocks.core.networkutils.hostutils.service.HostUtilService;
-import org.digitalmind.buildingblocks.core.networkutils.inetutils.service.InetUtils;
 import org.digitalmind.buildingblocks.core.requestcontext.dto.RequestContext;
 import org.digitalmind.buildingblocks.core.requestcontext.dto.impl.RequestContextBasic;
 import org.digitalmind.buildingblocks.core.requestcontext.service.RequestContextService;
-import org.digitalmind.buildingblocks.core.spel.SpelService;
+import org.digitalmind.buildingblocks.core.spel.service.SpelService;
 import org.digitalmind.eventorchestrator.config.EventOrchestratorConfig;
 import org.digitalmind.eventorchestrator.entity.*;
 import org.digitalmind.eventorchestrator.enumeration.EventActivityExecutionMode;
@@ -121,9 +119,6 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             TemplateActivityActivatorService taas,
             TemplateFlowService tfs,
             SpelService spelService,
-            HostUtilService hostUtilService,
-
-            InetUtils inetUtils,
             EventActivityService eventActivityService,
             EventMemoService eventMemoService
     ) {

@@ -7,7 +7,7 @@ import com.google.common.cache.LoadingCache;
 import lombok.extern.slf4j.Slf4j;
 import org.digitalmind.buildingblocks.core.requestcontext.dto.RequestContext;
 import org.digitalmind.buildingblocks.core.requestcontext.service.RequestContextService;
-import org.digitalmind.buildingblocks.core.spel.SpelService;
+import org.digitalmind.buildingblocks.core.spel.service.SpelService;
 import org.digitalmind.eventorchestrator.config.EventDirectiveConfig;
 import org.digitalmind.eventorchestrator.entity.EventDirective;
 import org.digitalmind.eventorchestrator.enumeration.EventDirectiveType;

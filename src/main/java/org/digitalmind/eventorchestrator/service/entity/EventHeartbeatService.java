@@ -1,7 +1,7 @@
 package org.digitalmind.eventorchestrator.service.entity;
 
 import groovy.util.logging.Slf4j;
-import org.digitalmind.buildingblocks.core.networkutils.hostutils.service.HostUtilService;
+import org.digitalmind.buildingblocks.core.networkutils.service.HostUtilService;
 import org.digitalmind.buildingblocks.core.requestcontext.service.RequestContextService;
 import org.digitalmind.eventorchestrator.entity.EventHeartbeat;
 import org.digitalmind.eventorchestrator.repository.EventHeartbeatRepository;

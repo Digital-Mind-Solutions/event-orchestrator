@@ -1,12 +1,10 @@
 package org.digitalmind.eventorchestrator.service.entity;
+
 import groovy.util.logging.Slf4j;
 import org.digitalmind.buildingblocks.core.beanutils.service.IService;
-import org.digitalmind.buildingblocks.core.networkutils.hostutils.service.HostUtilService;
-import org.digitalmind.buildingblocks.core.networkutils.inetutils.service.InetUtils;
-import org.digitalmind.buildingblocks.core.spel.SpelServiceImpl;
+import org.digitalmind.buildingblocks.core.networkutils.service.HostUtilService;
+import org.digitalmind.buildingblocks.core.spel.service.impl.SpelServiceImpl;
 import org.digitalmind.eventorchestrator.entity.EventActivity;
-import org.digitalmind.eventorchestrator.entity.TemplateActivity;
-import org.digitalmind.eventorchestrator.entity.TemplateActivityActivator;
 import org.digitalmind.eventorchestrator.enumeration.EventActivityStatus;
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
 import org.digitalmind.eventorchestrator.repository.EventActivityRepository;
@@ -17,17 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.Expression;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
 @Service
 @Slf4j
@@ -41,7 +34,12 @@ public class EventActivityService implements IService {
     private final HostUtilService hostUtilService;
 
     @Autowired
-    public EventActivityService(TemplateActivityRepository tar, TemplateActivityActivatorRepository taar, TemplateFlowRepository tfr, SpelServiceImpl spelService, EventActivityRepository eventActivityRepository, InetUtils inetUtils, HostUtilService hostUtilService) {
+    public EventActivityService(TemplateActivityRepository tar,
+                                TemplateActivityActivatorRepository taar,
+                                TemplateFlowRepository tfr,
+                                SpelServiceImpl spelService,
+                                EventActivityRepository eventActivityRepository,
+                                HostUtilService hostUtilService) {
         this.tar = tar;
         this.taar = taar;
         this.tfr = tfr;
