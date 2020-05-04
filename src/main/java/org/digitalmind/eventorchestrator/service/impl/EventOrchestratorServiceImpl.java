@@ -727,7 +727,8 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             }
             log.info("executed EventActivity id={}, code={}, processId={}, executionMode={}, requestContext={}", eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessId(), executionMode, requestContext.getId());
         } catch (Exception e) {
-            log.error("unable to execute EventActivity id={}, code={}, processId={}, executionMode={}, requestContext={}, error={}, cause={}", eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessId(), requestContext.getId(), executionMode, e.getMessage(), EventOrchestratorExceptionUtils.getExceptionCause(e).getMessage());
+            ExceptionType exceptionType = EventOrchestratorExceptionUtils.getExceptionType(e);
+            log.error("unable to execute EventActivity id={}, code={}, processId={}, executionMode={}, requestContext={}, exceptionType={}, error={}, cause={}", eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessId(), executionMode, requestContext.getId(), exceptionType.name(), e.getMessage(), EventOrchestratorExceptionUtils.getExceptionCause(e).getMessage());
             String statusDescription = "";
             statusDescription = statusDescription + e.getLocalizedMessage();
             statusDescription = statusDescription + "; " + EventOrchestratorExceptionUtils.getExceptionCause(e).getMessage();
@@ -735,10 +736,9 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             processMemoBuilder.status(EventMemoStatus.ERROR);
             processMemoBuilder.statusDescription(statusDescription);
 
-            ExceptionType exceptionType = EventOrchestratorExceptionUtils.getExceptionType(e);
 
             eventActivity.setStatusDescription(statusDescription);
-            switch (exceptionType){
+            switch (exceptionType) {
                 case RETRY:
                     eventActivity.setStatus(EventActivityStatus.PENDING_RETRY);
                     eventActivity.setRetry(eventActivity.getRetry() + 1);
@@ -747,15 +747,21 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
 
                 case FINAL:
                     eventActivity.setStatus(EventActivityStatus.ERROR);
+                    break;
 
                 case FATAL:
-                    if(process!= null){
+                    eventActivity.setStatus(EventActivityStatus.ERROR);
+                    if (process != null) {
                         process.setFatalException(e);
                     }
             }
 
             if (EventActivityExecutionMode.ASYNC.equals(executionMode)) {
-                eventActivityService.save(eventActivity);
+                if (EventActivityStatus.PENDING_RETRY.equals(eventActivity.getStatus())) {
+                    eventActivityService.save(eventActivity);
+                } else {
+                    eventActivityService.deleteById(eventActivity.getId());
+                }
             }
 
         }
