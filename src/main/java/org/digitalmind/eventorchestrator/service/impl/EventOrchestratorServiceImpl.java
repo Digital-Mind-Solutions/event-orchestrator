@@ -739,6 +739,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
 
             eventActivity.setStatusDescription(statusDescription);
             switch (exceptionType) {
+
                 case RETRY:
                     eventActivity.setStatus(EventActivityStatus.PENDING_RETRY);
                     eventActivity.setRetry(eventActivity.getRetry() + 1);
@@ -754,6 +755,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                     if (process != null) {
                         process.setFatalException(e);
                     }
+
             }
 
             if (EventActivityExecutionMode.ASYNC.equals(executionMode)) {
