@@ -13,10 +13,7 @@ import org.digitalmind.buildingblocks.core.requestcontext.service.RequestContext
 import org.digitalmind.buildingblocks.core.spel.service.SpelService;
 import org.digitalmind.eventorchestrator.config.EventOrchestratorConfig;
 import org.digitalmind.eventorchestrator.entity.*;
-import org.digitalmind.eventorchestrator.enumeration.EventActivityExecutionMode;
-import org.digitalmind.eventorchestrator.enumeration.EventActivityStatus;
-import org.digitalmind.eventorchestrator.enumeration.EventMemoStatus;
-import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
+import org.digitalmind.eventorchestrator.enumeration.*;
 import org.digitalmind.eventorchestrator.exception.EventOrchestratorException;
 import org.digitalmind.eventorchestrator.exception.EventOrchestratorFatalException;
 import org.digitalmind.eventorchestrator.plugin.EventOrchestratorEntityPlugin;
@@ -738,11 +735,24 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             processMemoBuilder.status(EventMemoStatus.ERROR);
             processMemoBuilder.statusDescription(statusDescription);
 
-            eventActivity.setStatus(EventActivityStatus.PENDING_RETRY);
-            eventActivity.setStatusDescription(statusDescription);
+            ExceptionType exceptionType = EventOrchestratorExceptionUtils.getExceptionType(e);
 
-            eventActivity.setRetry(eventActivity.getRetry() + 1);
-            eventActivity.setRetryDate(new Date());
+            eventActivity.setStatusDescription(statusDescription);
+            switch (exceptionType){
+                case RETRY:
+                    eventActivity.setStatus(EventActivityStatus.PENDING_RETRY);
+                    eventActivity.setRetry(eventActivity.getRetry() + 1);
+                    eventActivity.setRetryDate(new Date());
+                    break;
+
+                case FINAL:
+                    eventActivity.setStatus(EventActivityStatus.ERROR);
+
+                case FATAL:
+                    if(process!= null){
+                        process.setFatalException(e);
+                    }
+            }
 
             if (EventActivityExecutionMode.ASYNC.equals(executionMode)) {
                 eventActivityService.save(eventActivity);

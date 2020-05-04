@@ -1,35 +1,63 @@
 package org.digitalmind.eventorchestrator.utils;
 
-import org.digitalmind.eventorchestrator.exception.EventDirectiveException;
-import org.digitalmind.eventorchestrator.exception.EventOrchestratorException;
-import org.springframework.expression.ExpressionInvocationTargetException;
+import org.digitalmind.eventorchestrator.enumeration.ExceptionType;
+import org.digitalmind.eventorchestrator.exception.*;
+import org.springframework.expression.ExpressionException;
 
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 public class EventOrchestratorExceptionUtils {
 
-    public static Throwable getExceptionCause(Exception e) {
-        Throwable cause = e;
-        if (cause.getCause() != null) {
-            cause = e.getCause();
+    public static Throwable getExceptionCause(Throwable throwable) {
+        if (
+                (
+                        throwable instanceof EventDirectiveException
+                                ||
+                                throwable instanceof EventOrchestratorException
+                                ||
+                                throwable instanceof ExpressionException
+                                ||
+                                throwable instanceof ExecutionException
+                                ||
+                                throwable instanceof CompletionException
+                )
+                        &&
+                        throwable.getCause() != null) {
+            return getExceptionCause(throwable.getCause());
         }
-        if (cause instanceof EventDirectiveException) {
-            cause = cause.getCause();
+        if (throwable.getCause() != null) {
+            return throwable.getCause();
         }
-        if (cause instanceof EventOrchestratorException) {
-            cause = cause.getCause();
+        return throwable;
+    }
+
+    public static ExceptionType getExceptionType(Throwable throwable) {
+        if(throwable instanceof EventDirectiveFinalException){
+            return ExceptionType.FINAL;
         }
-        if (cause instanceof ExpressionInvocationTargetException) {
-            cause = cause.getCause();
+
+        if(throwable instanceof EventOrchestratorRetryException){
+            return ExceptionType.RETRY;
         }
-        if (cause instanceof ExecutionException) {
-            cause = cause.getCause();
+
+        if(throwable instanceof EventOrchestratorFinalException){
+            return ExceptionType.FINAL;
         }
-        if (cause instanceof CompletionException) {
-            cause = cause.getCause();
+
+        if(throwable instanceof EventOrchestratorFatalException){
+            return ExceptionType.FATAL;
         }
-        return cause;
+
+        if(throwable instanceof ExpressionException){
+            return ExceptionType.FATAL;
+        }
+
+        if(throwable instanceof ExecutionException){
+            return ExceptionType.FATAL;
+        }
+
+        return ExceptionType.RETRY;
     }
 
 }
