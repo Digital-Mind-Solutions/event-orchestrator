@@ -17,6 +17,7 @@ import org.digitalmind.eventorchestrator.enumeration.EventActivityExecutionMode;
 import org.digitalmind.eventorchestrator.enumeration.EventActivityStatus;
 import org.digitalmind.eventorchestrator.enumeration.EventMemoStatus;
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
+import org.digitalmind.eventorchestrator.exception.EventOrchestratorException;
 import org.digitalmind.eventorchestrator.exception.EventOrchestratorFatalException;
 import org.digitalmind.eventorchestrator.plugin.EventOrchestratorEntityPlugin;
 import org.digitalmind.eventorchestrator.repository.EventActivityRepository;
@@ -30,6 +31,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.digitalmind.eventorchestrator.utils.EventOrchestratorExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -728,12 +730,17 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             }
             log.info("executed EventActivity id={}, code={}, processId={}, executionMode={}, requestContext={}", eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessId(), executionMode, requestContext.getId());
         } catch (Exception e) {
-            log.error("unable to execute EventActivity id={}, code={}, processId={}, executionMode={}, requestContext={}, error={}, cause={}", eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessId(), requestContext.getId(), executionMode, e.getMessage(), ((e.getCause() != null) ? e.getCause().getMessage() : ""));
+            log.error("unable to execute EventActivity id={}, code={}, processId={}, executionMode={}, requestContext={}, error={}, cause={}", eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessId(), requestContext.getId(), executionMode, e.getMessage(), EventOrchestratorExceptionUtils.getExceptionCause(e).getMessage());
+            String statusDescription = "";
+            statusDescription = statusDescription + e.getLocalizedMessage();
+            statusDescription = statusDescription + "; " + EventOrchestratorExceptionUtils.getExceptionCause(e).getMessage();
+
             processMemoBuilder.status(EventMemoStatus.ERROR);
-            processMemoBuilder.statusDescription(e.getLocalizedMessage());
+            processMemoBuilder.statusDescription(statusDescription);
 
             eventActivity.setStatus(EventActivityStatus.PENDING_RETRY);
-            eventActivity.setStatusDescription(e.getLocalizedMessage());
+            eventActivity.setStatusDescription(statusDescription);
+
             eventActivity.setRetry(eventActivity.getRetry() + 1);
             eventActivity.setRetryDate(new Date());
 
