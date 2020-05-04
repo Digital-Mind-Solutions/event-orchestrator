@@ -728,10 +728,11 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             log.info("executed EventActivity id={}, code={}, processId={}, executionMode={}, requestContext={}", eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessId(), executionMode, requestContext.getId());
         } catch (Exception e) {
             ExceptionType exceptionType = EventOrchestratorExceptionUtils.getExceptionType(e);
-            log.error("unable to execute EventActivity id={}, code={}, processId={}, executionMode={}, requestContext={}, exceptionType={}, error={}, cause={}", eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessId(), executionMode, requestContext.getId(), exceptionType.name(), e.getMessage(), EventOrchestratorExceptionUtils.getExceptionCause(e).getMessage());
+            Throwable exceptionCause = EventOrchestratorExceptionUtils.getExceptionCause(e);
+            log.error("unable to execute EventActivity id={}, code={}, processId={}, executionMode={}, requestContext={}, exceptionType={}, error={}, cause={}", eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessId(), executionMode, requestContext.getId(), exceptionType.name(), e.getMessage(), exceptionCause.getMessage());
             String statusDescription = "";
             statusDescription = statusDescription + e.getLocalizedMessage();
-            statusDescription = statusDescription + "; " + EventOrchestratorExceptionUtils.getExceptionCause(e).getMessage();
+            statusDescription = statusDescription + "; " + exceptionCause.getMessage();
 
             processMemoBuilder.status(EventMemoStatus.ERROR);
             processMemoBuilder.statusDescription(statusDescription);
@@ -753,7 +754,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                 case FATAL:
                     eventActivity.setStatus(EventActivityStatus.ERROR);
                     if (process != null) {
-                        process.setFatalException(e);
+                        process.setFatalCause(exceptionCause);
                     }
 
             }

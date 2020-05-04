@@ -6,5 +6,5 @@ public interface EventOrchestratorProcess {
 
     Long getId();
 
-    boolean setFatalException(Exception e);
+    boolean setFatalCause(Throwable throwable);
 }
