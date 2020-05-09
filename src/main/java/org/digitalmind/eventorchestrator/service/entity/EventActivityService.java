@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.LockTimeoutException;
 import javax.persistence.PessimisticLockException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -118,7 +119,7 @@ public class EventActivityService implements IService {
 
     @Transactional
     public List<EventActivity> findAllWithExecutionTypeParallel(Date plannedDate, Date retryDate, Pageable pageable) {
-        List<EventActivity> eventActivityList = null;
+        List<EventActivity> eventActivityList = new ArrayList<>();
         try {
             eventActivityList = eventActivityRepository.findAllWithExecutionTypeParallel(plannedDate, retryDate, pageable);
             eventActivityList.forEach(eventActivity -> {
@@ -137,7 +138,7 @@ public class EventActivityService implements IService {
 
     @Transactional
     public List<EventActivity> findAllWithExecutionTypeSerialProcess(Date plannedDate, Date retryDate, Pageable pageable) {
-        List<EventActivity> eventActivityList = null;
+        List<EventActivity> eventActivityList = new ArrayList<>();
         try {
             eventActivityList = eventActivityRepository.findAllWithExecutionTypeSerialProcess(plannedDate, retryDate, pageable);
             eventActivityList.forEach(eventActivity -> {
@@ -156,7 +157,7 @@ public class EventActivityService implements IService {
 
     @Transactional
     public List<EventActivity> findAllWithExecutionTypeSerialEntity(Date plannedDate, Date retryDate, Pageable pageable) {
-        List<EventActivity> eventActivityList = null;
+        List<EventActivity> eventActivityList = new ArrayList<>();
         try {
             eventActivityList = eventActivityRepository.findAllWithExecutionTypeSerialEntity(plannedDate, retryDate, pageable);
             eventActivityList.forEach(eventActivity -> {
