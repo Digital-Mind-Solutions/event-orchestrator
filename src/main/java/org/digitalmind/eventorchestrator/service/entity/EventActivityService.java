@@ -1,6 +1,6 @@
 package org.digitalmind.eventorchestrator.service.entity;
 
-import groovy.util.logging.Slf4j;
+import lombok.extern.slf4j.Slf4j;
 import org.digitalmind.buildingblocks.core.beanutils.service.IService;
 import org.digitalmind.buildingblocks.core.networkutils.service.HostUtilService;
 import org.digitalmind.buildingblocks.core.spel.service.impl.SpelServiceImpl;
@@ -18,6 +18,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.LockTimeoutException;
+import javax.persistence.PessimisticLockException;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -116,31 +118,58 @@ public class EventActivityService implements IService {
 
     @Transactional
     public List<EventActivity> findAllWithExecutionTypeParallel(Date plannedDate, Date retryDate, Pageable pageable) {
-        List<EventActivity> eventActivityList = eventActivityRepository.findAllWithExecutionTypeParallel(plannedDate, retryDate, pageable);
-        eventActivityList.forEach(eventActivity -> {
-            eventActivity.setStatus(EventActivityStatus.QUEUED);
-            eventActivity.setExecutionNode(hostUtilService.getHostname());
-        });
+        List<EventActivity> eventActivityList = null;
+        try {
+            eventActivityList = eventActivityRepository.findAllWithExecutionTypeParallel(plannedDate, retryDate, pageable);
+            eventActivityList.forEach(eventActivity -> {
+                eventActivity.setStatus(EventActivityStatus.QUEUED);
+                eventActivity.setExecutionNode(hostUtilService.getHostname());
+            });
+        } catch (PessimisticLockException e) {
+            //ignore PessimisticLockException
+            log.info("findAllWithExecutionTypeParallel exception={}, exceptionMessage={}", e.getClass().getSimpleName(), e.getMessage());
+        } catch (LockTimeoutException e) {
+            //ignore LockTimeoutException
+            log.info("findAllWithExecutionTypeParallel exception={}, exceptionMessage={}", e.getClass().getSimpleName(), e.getMessage());
+        }
         return eventActivityList;
     }
 
     @Transactional
     public List<EventActivity> findAllWithExecutionTypeSerialProcess(Date plannedDate, Date retryDate, Pageable pageable) {
-        List<EventActivity> eventActivityList = eventActivityRepository.findAllWithExecutionTypeSerialProcess(plannedDate, retryDate, pageable);
-        eventActivityList.forEach(eventActivity -> {
-            eventActivity.setStatus(EventActivityStatus.QUEUED);
-            eventActivity.setExecutionNode(hostUtilService.getHostname());
-        });
+        List<EventActivity> eventActivityList = null;
+        try {
+            eventActivityList = eventActivityRepository.findAllWithExecutionTypeSerialProcess(plannedDate, retryDate, pageable);
+            eventActivityList.forEach(eventActivity -> {
+                eventActivity.setStatus(EventActivityStatus.QUEUED);
+                eventActivity.setExecutionNode(hostUtilService.getHostname());
+            });
+        } catch (PessimisticLockException e) {
+            //ignore PessimisticLockException
+            log.info("findAllWithExecutionTypeSerialProcess exception={}, exceptionMessage={}", e.getClass().getSimpleName(), e.getMessage());
+        } catch (LockTimeoutException e) {
+            //ignore LockTimeoutException
+            log.info("findAllWithExecutionTypeSerialProcess exception={}, exceptionMessage={}", e.getClass().getSimpleName(), e.getMessage());
+        }
         return eventActivityList;
     }
 
     @Transactional
     public List<EventActivity> findAllWithExecutionTypeSerialEntity(Date plannedDate, Date retryDate, Pageable pageable) {
-        List<EventActivity> eventActivityList = eventActivityRepository.findAllWithExecutionTypeSerialEntity(plannedDate, retryDate, pageable);
-        eventActivityList.forEach(eventActivity -> {
-            eventActivity.setStatus(EventActivityStatus.QUEUED);
-            eventActivity.setExecutionNode(hostUtilService.getHostname());
-        });
+        List<EventActivity> eventActivityList = null;
+        try {
+            eventActivityList = eventActivityRepository.findAllWithExecutionTypeSerialEntity(plannedDate, retryDate, pageable);
+            eventActivityList.forEach(eventActivity -> {
+                eventActivity.setStatus(EventActivityStatus.QUEUED);
+                eventActivity.setExecutionNode(hostUtilService.getHostname());
+            });
+        } catch (PessimisticLockException e) {
+            //ignore PessimisticLockException
+            log.info("findAllWithExecutionTypeSerialEntity exception={}, exceptionMessage={}", e.getClass().getSimpleName(), e.getMessage());
+        } catch (LockTimeoutException e) {
+            //ignore LockTimeoutException
+            log.info("findAllWithExecutionTypeSerialEntity exception={}, exceptionMessage={}", e.getClass().getSimpleName(), e.getMessage());
+        }
         return eventActivityList;
     }
 
