@@ -24,6 +24,7 @@ public class EventOrchestratorConfig {
     @Getter
     @Setter
     public static class EventOrchestratorCaches {
+        private String eventRetry;
         private String templateFlow;
         private String templateActivity;
         private String templateActivityActivator;

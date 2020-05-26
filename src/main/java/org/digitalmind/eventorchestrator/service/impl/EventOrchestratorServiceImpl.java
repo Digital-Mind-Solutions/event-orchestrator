@@ -5,6 +5,11 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheBuilderSpec;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
 import org.digitalmind.buildingblocks.core.beanutils.service.SpringBeanUtil;
 import org.digitalmind.buildingblocks.core.requestcontext.dto.RequestContext;
@@ -16,6 +21,7 @@ import org.digitalmind.eventorchestrator.entity.*;
 import org.digitalmind.eventorchestrator.enumeration.*;
 import org.digitalmind.eventorchestrator.exception.EventOrchestratorException;
 import org.digitalmind.eventorchestrator.exception.EventOrchestratorFatalException;
+import org.digitalmind.eventorchestrator.model.EventRetryPolicy;
 import org.digitalmind.eventorchestrator.plugin.EventOrchestratorEntityPlugin;
 import org.digitalmind.eventorchestrator.repository.EventActivityRepository;
 import org.digitalmind.eventorchestrator.repository.EventMemoRepository;
@@ -23,11 +29,6 @@ import org.digitalmind.eventorchestrator.sam.EventOrchestratorPoller;
 import org.digitalmind.eventorchestrator.service.EventOrchestratorService;
 import org.digitalmind.eventorchestrator.service.EventOrchestratorServiceDependsOn;
 import org.digitalmind.eventorchestrator.service.entity.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
-import lombok.extern.slf4j.Slf4j;
 import org.digitalmind.eventorchestrator.utils.EventOrchestratorExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -59,6 +60,8 @@ import static org.digitalmind.eventorchestrator.config.EventOrchestratorModuleCo
 @Slf4j
 public class EventOrchestratorServiceImpl implements EventOrchestratorService {
 
+    private final static String EVENT_RETRY_DEFAULT_CODE = "DEFAULT";
+
     private EventOrchestratorService self;
 
     private final EventOrchestratorConfig config;
@@ -71,12 +74,17 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
     private final EventHeartbeatService eventHeartbeatService;
 
     private final RequestContextService requestContextService;
+
+    private final EventRetryService eventRetryService;
     private final TemplateActivityService tas;
     private final TemplateActivityActivatorService taas;
     private final TemplateFlowService tfs;
 
 
     private final SpelService spelService;
+
+    private final CacheLoader<String, List<EventRetry>> erCacheLoader;
+    private final LoadingCache<String, List<EventRetry>> erCache;
 
     private final CacheLoader<TaaKey, List<TemplateActivityActivator>> taaCacheLoader;
     private final LoadingCache<TaaKey, List<TemplateActivityActivator>> taaCache;
@@ -109,18 +117,19 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             EventOrchestratorConfig config,
             @Qualifier(EVENT_ORCHESTRATOR_PLUGIN_REGISTRY) PluginRegistry<EventOrchestratorEntityPlugin, String>
                     eventOrchestratorPluginRegistry,
-            PluginRegistry<EventOrchestratorEntityPlugin, String> eventOrchestratorPluginRegistry1, SpringBeanUtil springBeanUtil,
+            PluginRegistry<EventOrchestratorEntityPlugin, String> eventOrchestratorPluginRegistry1,
+            SpringBeanUtil springBeanUtil,
             EventMemoRepository eventMemoRepository,
             EventActivityRepository eventActivityRepository,
             EventHeartbeatService eventHeartbeatService,
             RequestContextService requestContextService,
+            EventRetryService eventRetryService,
             TemplateActivityService tas,
             TemplateActivityActivatorService taas,
             TemplateFlowService tfs,
             SpelService spelService,
             EventActivityService eventActivityService,
-            EventMemoService eventMemoService
-    ) {
+            EventMemoService eventMemoService) {
         this.config = config;
 
         this.eventOrchestratorPluginRegistry = eventOrchestratorPluginRegistry;
@@ -131,10 +140,23 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         this.eventActivityService = eventActivityService;
         //this.eventActivityRepository = eventActivityRepository;
         this.requestContextService = requestContextService;
+        this.eventRetryService = eventRetryService;
         this.tas = tas;
         this.taas = taas;
         this.tfs = tfs;
         this.spelService = spelService;
+
+        this.erCacheLoader = new CacheLoader<String, List<EventRetry>>() {
+            @Override
+            public List<EventRetry> load(String code) {
+                if (code == null) return null;
+                List<EventRetry> eventRetryList = eventRetryService.findByCodeOrderByFromValueAsc(code);
+                return eventRetryList;
+            }
+        };
+        this.erCache = CacheBuilder
+                .from(CacheBuilderSpec.parse(config.getCache().getEventRetry()))
+                .build(erCacheLoader);
 
         this.taaCacheLoader = new CacheLoader<TaaKey, List<TemplateActivityActivator>>() {
             @Override
@@ -744,9 +766,23 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             switch (exceptionType) {
 
                 case RETRY:
-                    eventActivity.setStatus(EventActivityStatus.PENDING_RETRY);
+                    EventRetryPolicy retryPolicy = getRetryPolicy(eventActivity.getCode(), eventActivity.getRetry() + 1);
                     eventActivity.setRetry(eventActivity.getRetry() + 1);
-                    eventActivity.setRetryDate(new Date());
+                    switch (retryPolicy.getExceptionType()) {
+                        case RETRY:
+                            eventActivity.setStatus(EventActivityStatus.PENDING_RETRY);
+                            eventActivity.setRetryDate(DateUtils.addSeconds(new Date(), retryPolicy.getDelay()));
+                            break;
+                        case FINAL:
+                            eventActivity.setStatus(EventActivityStatus.ERROR);
+                            break;
+
+                        case FATAL:
+                            eventActivity.setStatus(EventActivityStatus.ERROR);
+                            if (process != null) {
+                                process.setFatalCause(exceptionCause);
+                            }
+                    }
                     break;
 
                 case FINAL:
@@ -800,6 +836,67 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             return null;
         }
         return eventOrchestratorPluginRegistry.getPluginFor(name).getEntityAlias(name);
+    }
+
+    @Override
+    public EventRetryPolicy getRetryPolicy(String code, int retry) {
+        EventRetryPolicy eventRetryPolicy = new EventRetryPolicy();
+        eventRetryPolicy.setExceptionType(ExceptionType.FATAL);
+        eventRetryPolicy.setDelay(0);
+
+        List<EventRetry> eventRetryList = null;
+        try {
+            eventRetryList = erCache.get(code);
+            if (eventRetryList != null && eventRetryList.size() > 0) {
+                EventRetry eventRetry = eventRetryList.stream()
+                        .filter(eventRetrySearch -> eventRetrySearch.getCode().equals(code) &&
+                                eventRetrySearch.getFromValue() <= retry &&
+                                eventRetrySearch.getToValue() >= retry
+                        )
+                        .findFirst()
+                        .orElse(null);
+                if (eventRetry != null) {
+                    eventRetryPolicy.setExceptionType(eventRetry.getExceptionType());
+                    switch (eventRetry.getDelayType()) {
+                        case ABSOLUTE:
+                            eventRetryPolicy.setDelay(eventRetry.getDelay());
+                            break;
+                        case PROGRESSIVE:
+                            eventRetryPolicy.setDelay(eventRetry.getDelay() * (retry - eventRetry.getFromValue() + 1));
+                            break;
+                    }
+                    return eventRetryPolicy;
+                }
+            }
+
+            eventRetryList = erCache.get(EVENT_RETRY_DEFAULT_CODE);
+            if (eventRetryList != null && eventRetryList.size() > 0) {
+                EventRetry eventRetry = eventRetryList.stream()
+                        .filter(eventRetrySearch -> eventRetrySearch.getCode().equals(EVENT_RETRY_DEFAULT_CODE) &&
+                                eventRetrySearch.getFromValue() <= retry &&
+                                eventRetrySearch.getToValue() >= retry
+                        )
+                        .findFirst()
+                        .orElse(null);
+                if (eventRetry != null) {
+                    eventRetryPolicy.setExceptionType(eventRetry.getExceptionType());
+                    switch (eventRetry.getDelayType()) {
+                        case ABSOLUTE:
+                            eventRetryPolicy.setDelay(eventRetry.getDelay());
+                            break;
+                        case PROGRESSIVE:
+                            eventRetryPolicy.setDelay(eventRetry.getDelay() * (retry - eventRetry.getFromValue() + 1));
+                            break;
+                    }
+                    return eventRetryPolicy;
+                }
+            }
+
+        } catch (ExecutionException | RuntimeException e) {
+            throw new EventOrchestratorFatalException("Unable to retrieve retry policy for code " + code, e);
+        }
+
+        return eventRetryPolicy;
     }
 
 }

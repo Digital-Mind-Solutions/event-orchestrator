@@ -6,6 +6,7 @@ import org.digitalmind.buildingblocks.core.requestcontext.dto.RequestContext;
 import org.digitalmind.eventorchestrator.entity.EventActivity;
 import org.digitalmind.eventorchestrator.entity.EventMemo;
 import org.digitalmind.eventorchestrator.enumeration.EventActivityExecutionMode;
+import org.digitalmind.eventorchestrator.model.EventRetryPolicy;
 
 import java.util.Map;
 
@@ -26,5 +27,7 @@ public interface EventOrchestratorService extends IService {
     Object getEntity(String name, Object id);
 
     String getEntityAlias(String name);
+
+    EventRetryPolicy getRetryPolicy(String code, int retry);
 
 }
