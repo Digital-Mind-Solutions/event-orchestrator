@@ -20,7 +20,7 @@ import static org.digitalmind.eventorchestrator.entity.EventRetry.TABLE_NAME;
         indexes = {
                 @Index(
                         name = TABLE_NAME + "_ix1",
-                        columnList = "code,low_value,highValue",
+                        columnList = "code,from_value,to_value",
                         unique = true
                 )
         }
