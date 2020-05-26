@@ -714,6 +714,8 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                     if (eventActivity.getExecutor() != null && eventActivity.getExecutor().trim().length() > 0) {
                         paExecutor = spelService.getValue(eventActivity.getExecutor(), paContext);
                     }
+                } catch (EventOrchestratorException e) {
+                    throw e;
                 } catch (ExecutionException | RuntimeException e) {
                     throw new EventOrchestratorFatalException("Unable to get executor expr for ProcessActivity with id " + eventActivity.getId() + " and process with id " + ((process != null) ? String.valueOf(process.getId()) : "null"), e);
                 }
