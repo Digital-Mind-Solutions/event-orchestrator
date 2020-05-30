@@ -100,7 +100,7 @@ public class EventActivity extends ContextVersionableAuditModel implements IdMod
     private EventActivityStatus status;
 
     @ApiModelProperty(value = "The status description of the activity (error message)", required = false)
-    @Column(name = "status_description", length = 2000)
+    @Column(name = "status_description", length = 4000)
     private String statusDescription;
 
     @ApiModelProperty(value = "The date when activity becomes effective for retry", required = false)
@@ -114,19 +114,19 @@ public class EventActivity extends ContextVersionableAuditModel implements IdMod
     private int retry = 0;
 
     @ApiModelProperty(value = "The qualification rule", required = false)
-    @Column(name = "qualifier")
+    @Column(name = "qualifier", length = 4000)
     private String qualifier;
 
     @ApiModelProperty(value = "The execution rule", required = false)
-    @Column(name = "executor")
+    @Column(name = "executor", length = 4000)
     private String executor;
 
     @ApiModelProperty(value = "The system memo", required = false)
-    @Column(name = "system_memo")
+    @Column(name = "system_memo", length = 500)
     private String systemMemo;
 
     @ApiModelProperty(value = "The entity name", required = false)
-    @Column(name = "entity_name")
+    @Column(name = "entity_name", length = 500)
     private String entityName;
 
     @ApiModelProperty(value = "The entity id", required = false)

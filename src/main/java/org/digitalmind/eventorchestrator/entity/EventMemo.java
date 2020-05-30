@@ -55,7 +55,7 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     private Long id;
 
     @ApiModelProperty(value = "The name of the process", required = false)
-    @Column(name = "process_name")
+    @Column(name = "process_name", length = 500)
     private String processName;
 
     @ApiModelProperty(value = "The id of the process", required = false)
@@ -82,15 +82,15 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     private EventMemoStatus status;
 
     @ApiModelProperty(value = "The status description of the memo (error message)", required = false)
-    @Column(name = "status_description", length = 2000)
+    @Column(name = "status_description", length = 4000)
     private String statusDescription;
 
     @ApiModelProperty(value = "The system memo", required = false)
-    @Column(name = "system_memo")
+    @Column(name = "system_memo", length = 500)
     private String systemMemo;
 
     @ApiModelProperty(value = "The entity name", required = false)
-    @Column(name = "entity_name")
+    @Column(name = "entity_name", length = 500)
     private String entityName;
 
     @ApiModelProperty(value = "The entity id", required = false)

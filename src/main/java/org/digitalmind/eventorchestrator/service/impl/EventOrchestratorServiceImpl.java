@@ -739,6 +739,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                 } catch (EventOrchestratorException e) {
                     throw e;
                 } catch (ExecutionException | RuntimeException e) {
+                    log.error("Unable to get executor expr for ProcessActivity with id " + eventActivity.getId() + " and process with id " + ((process != null) ? String.valueOf(process.getId()) : "null"), e);
                     throw new EventOrchestratorFatalException("Unable to get executor expr for ProcessActivity with id " + eventActivity.getId() + " and process with id " + ((process != null) ? String.valueOf(process.getId()) : "null"), e);
                 }
                 processMemoBuilder.status(EventMemoStatus.SUCCESS);
