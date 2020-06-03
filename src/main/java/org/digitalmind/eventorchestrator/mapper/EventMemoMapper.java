@@ -76,7 +76,10 @@ public abstract class EventMemoMapper implements IMapper {
             //log.error("Unable to translate eventMemo id={}, code={}", eventMemo.getId(), eventMemo.getCode());
         }
 
-        return EventMemoDTO.builder()
+
+        EventMemoDTO.EventMemoDTOBuilder builder = EventMemoDTO.builder();
+
+        builder
                 .id(eventMemo.getId())
                 .processId(eventMemo.getProcessId())
                 .parentId(eventMemo.getParentId())
@@ -87,11 +90,24 @@ public abstract class EventMemoMapper implements IMapper {
                 .systemMemo(memoI18n)
                 .entityName(eventMemo.getEntityName())
                 .entityId(eventMemo.getEntityId())
-                .parameters(eventMemo.getParameters())
-                .context(eventMemo.getContext())
+                //.parameters(eventMemo.getParameters())
+                //.context(eventMemo.getContext())
                 .contextId(eventMemo.getContextId())
-                .createdAt(eventMemo.getCreatedAt())
-                .build();
+                .createdAt(eventMemo.getCreatedAt());
+
+        if (mappingContext.qualifies("parameters", level)) {
+            builder
+                    .parameters(eventMemo.getParameters());
+        }
+
+        if (mappingContext.qualifies("context", level)) {
+            builder
+                    .context(eventMemo.getContext());
+        }
+
+        EventMemoDTO eventMemoDTO = builder.build();
+        return eventMemoDTO;
+
     }
 
 }

@@ -1,6 +1,7 @@
 package org.digitalmind.eventorchestrator.dto;
 
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -65,9 +66,11 @@ public class EventMemoDTO extends AuditDTO {
     private String entityId;
 
     @ApiModelProperty(value = "The process memo parameters", required = false)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Map<String, Object> parameters;
 
     @ApiModelProperty(value = "The memo context", required = false)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Map<String, Object> context;
 
     @ApiModelProperty(value = "The memo context id", required = false)
