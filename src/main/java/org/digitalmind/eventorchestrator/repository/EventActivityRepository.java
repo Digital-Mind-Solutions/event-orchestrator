@@ -47,7 +47,7 @@ public interface EventActivityRepository extends JpaRepository<EventActivity, Lo
                     " " +
                     "           SELECT C FROM EventActivity C " +
                     "           WHERE C.executionType = org.digitalmind.eventorchestrator.enumeration.EventActivityExecutionType.SERIAL_PROCESS " +
-                    "             AND C.plannedDate < P.plannedDate " +
+                    "             AND (C.plannedDate < P.plannedDate OR (C.plannedDate = P.plannedDate AND C.id < P.id))" +
                     "             AND C.processId = P.processId " +
                     ") " +
                     "ORDER BY P.priority, P.retryDate NULLS FIRST, P.id"
