@@ -61,11 +61,11 @@ public class TemplateActivity extends ContextVersionableAuditModel implements Id
     private String code;
 
     @ApiModelProperty(value = "The qualifier SPEL that must evaluate to boolean", required = false)
-    @Column(name = "qualifier_expr2", length = 5000)
+    @Column(name = "qualifier_expr2", length = 3000)
     private String qualifierExpr2;
 
     @ApiModelProperty(value = "The executor HANDLEBARS that must give the activity parameters", required = false)
-    @Column(name = "executor_expr2", length = 5000)
+    @Column(name = "executor_expr2", length = 3000)
     private String executorExpr2;
 
     @ApiModelProperty(value = "The sub status SPEL", required = false)
@@ -81,7 +81,7 @@ public class TemplateActivity extends ContextVersionableAuditModel implements Id
     private String entityIdExpr;
 
     @ApiModelProperty(value = "The process activity parameters SPEL", required = false)
-    @Column(name = "parameters_expr", length = 5000)
+    @Column(name = "parameters_expr", length = 3000)
     private String parametersExpr;
 
     @OneToMany(targetEntity = TemplateActivityActivator.class, mappedBy = "templateId", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
