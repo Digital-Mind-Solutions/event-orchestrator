@@ -81,7 +81,7 @@ public class TemplateActivity extends ContextVersionableAuditModel implements Id
     private String entityIdExpr;
 
     @ApiModelProperty(value = "The process activity parameters SPEL", required = false)
-    @Column(name = "parameters_expr", length = 6000)
+    @Column(name = "parameters_expr", length = 5000)
     private String parametersExpr;
 
     @OneToMany(targetEntity = TemplateActivityActivator.class, mappedBy = "templateId", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
