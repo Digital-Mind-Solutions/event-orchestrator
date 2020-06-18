@@ -268,7 +268,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             this.scheduler[i].scheduleAtFixedRate(() -> {
                         log.trace("Start scheduler [{}] db monitor", index);
                         try {
-                            int remainingCapacity = this.getRemainingQueueCapacity(this.eventOrchestratorTaskExecutor[index]);
+                            int remainingCapacity = this.getRemainingTaskExecutorCapacity(this.eventOrchestratorTaskExecutor[index]);
                             if (remainingCapacity == 0) {
                                 return;
                             }
@@ -279,7 +279,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                             for (EventActivity eventActivity : eventActivityList) {
                                 RequestContext requestContext = requestContextService.create();
                                 try {
-                                    log.info("adding eventActivity id={}, code={}, active core={}, remaining capacity={}", eventActivity.getId(), eventActivity.getCode(), getActiveCount(this.eventOrchestratorTaskExecutor[index]), this.getRemainingQueueCapacity(this.eventOrchestratorTaskExecutor[index]));
+                                    log.info("adding eventActivity id={}, code={}, active core={}, remaining capacity={}", eventActivity.getId(), eventActivity.getCode(), getActiveCount(this.eventOrchestratorTaskExecutor[index]), this.getRemainingTaskExecutorCapacity(this.eventOrchestratorTaskExecutor[index]));
                                     CompletableFuture<EventMemo> eventMemoCompletableFuture = CompletableFuture
                                             .supplyAsync(() -> self.executeEventActivity(requestContext, eventActivity, EventActivityExecutionMode.ASYNC), this.eventOrchestratorTaskExecutor[index])
                                             .exceptionally(throwable -> {
@@ -320,18 +320,30 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             return t;
         });
         int frequencyFactor = this.config.getThreadPoolExecutor().getHeartbeat().getSchedulerCapacityThreshold();
-        int frequencySeconds = (int) TimeUnit.SECONDS.convert(this.config.getThreadPoolExecutor().getHeartbeat().getSchedulerPeriod(), this.config.getThreadPoolExecutor().getHeartbeat().getSchedulerUnit());
+        int frequencySeconds = (int) TimeUnit.SECONDS.convert(
+                this.config.getThreadPoolExecutor().getHeartbeat().getSchedulerPeriod(),
+                this.config.getThreadPoolExecutor().getHeartbeat().getSchedulerUnit()
+        );
+
         final int clearOfferSeconds = frequencyFactor * frequencySeconds;
         this.scheduler[heartbeatIndex].scheduleAtFixedRate(() -> {
-                    log.trace("Start scheduler [{}] heartbeat monitor", heartbeatIndex);
+                    log.trace("Start scheduler [{}] heartbeat monitor - clear dead nodes", heartbeatIndex);
+                    Date logicalDate = new Date();
                     try {
-                        Date clearOlderThanDate = DateUtils.addSeconds(new Date(), -clearOfferSeconds);
-                        eventHeartbeatService.beat(clearOlderThanDate);
-                        log.trace("End scheduler [{}] heartbeat monitor", heartbeatIndex);
+                        Date clearOlderThanDate = DateUtils.addSeconds(logicalDate, -clearOfferSeconds);
+                        eventHeartbeatService.deleteByUpdatedAtBefore(clearOlderThanDate);
+                        log.trace("End scheduler [{}] heartbeat monitor - clear dead nodes", heartbeatIndex);
                     } catch (Exception e) {
-                        log.error("Error scheduler [{}] heartbeat monitor. {}", heartbeatIndex, Throwables.getStackTraceAsString(e), e);
+                        log.error("Error scheduler [{}] heartbeat monitor - clear dead nodes. {}", heartbeatIndex, Throwables.getStackTraceAsString(e), e);
                     }
 
+                    log.trace("Start scheduler [{}] heartbeat monitor - beat current node", heartbeatIndex);
+                    try {
+                        eventHeartbeatService.beatNode(logicalDate);
+                        log.trace("End scheduler [{}] heartbeat monitor - beat current node", heartbeatIndex);
+                    } catch (Exception e) {
+                        log.error("Error scheduler [{}] heartbeat monitor - beat current node. {}", heartbeatIndex, Throwables.getStackTraceAsString(e), e);
+                    }
                 },
                 this.config.getThreadPoolExecutor().getHeartbeat().getSchedulerInitDelay(),
                 this.config.getThreadPoolExecutor().getHeartbeat().getSchedulerPeriod(),
@@ -366,6 +378,23 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         this.self = (EventOrchestratorService) springBeanUtil.getBean(EventOrchestratorService.class);
     }
 
+    public int getMaxCount(AsyncTaskExecutor asyncTaskExecutor) {
+        if (asyncTaskExecutor == null) {
+            return 0;
+        }
+        AsyncTaskExecutor executor = asyncTaskExecutor;
+        if (executor instanceof DelegatingSecurityContextAsyncTaskExecutorWrapper) {
+            executor = ((DelegatingSecurityContextAsyncTaskExecutorWrapper) asyncTaskExecutor).getDelegate();
+        }
+        if (executor instanceof ThreadPoolExecutor) {
+            return ((ThreadPoolExecutor) executor).getMaximumPoolSize();
+        }
+        if (executor instanceof ThreadPoolTaskExecutor) {
+            return ((ThreadPoolTaskExecutor) executor).getMaxPoolSize();
+        }
+        return 0;
+    }
+
     public int getActiveCount(AsyncTaskExecutor asyncTaskExecutor) {
         if (asyncTaskExecutor == null) {
             return 0;
@@ -383,9 +412,9 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         return 0;
     }
 
-    public BlockingQueue getBlockingQueue(AsyncTaskExecutor asyncTaskExecutor) {
+    public int getRemainingQueueCount(AsyncTaskExecutor asyncTaskExecutor) {
         if (asyncTaskExecutor == null) {
-            return null;
+            return 0;
         }
         AsyncTaskExecutor executor = asyncTaskExecutor;
 
@@ -393,20 +422,20 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             executor = ((DelegatingSecurityContextAsyncTaskExecutorWrapper) asyncTaskExecutor).getDelegate();
         }
         if (executor instanceof ThreadPoolExecutor) {
-            return ((ThreadPoolExecutor) executor).getQueue();
+            return ((ThreadPoolExecutor) executor).getQueue().remainingCapacity();
         }
         if (executor instanceof ThreadPoolTaskExecutor) {
-            return ((ThreadPoolTaskExecutor) executor).getThreadPoolExecutor().getQueue();
-        }
-        return null;
-    }
-
-    public int getRemainingQueueCapacity(AsyncTaskExecutor asyncTaskExecutor) {
-        BlockingQueue blockingQueue = getBlockingQueue(asyncTaskExecutor);
-        if (blockingQueue != null) {
-            return blockingQueue.remainingCapacity();
+            return ((ThreadPoolTaskExecutor) executor).getThreadPoolExecutor().getQueue().remainingCapacity();
         }
         return 0;
+    }
+
+    public int getRemainingTaskExecutorCapacity(AsyncTaskExecutor asyncTaskExecutor) {
+        int count = getMaxCount(asyncTaskExecutor) + getRemainingQueueCount(asyncTaskExecutor) - getActiveCount(asyncTaskExecutor) - 1;
+        if (count < 0) {
+            return 0;
+        }
+        return count;
     }
 
     public RequestContext getOrDefault(RequestContext requestContext) {

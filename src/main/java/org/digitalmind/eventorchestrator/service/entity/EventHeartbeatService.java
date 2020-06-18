@@ -30,25 +30,21 @@ public class EventHeartbeatService {
         this.count = 100;
     }
 
-    @Transactional
     public void deleteByUpdatedAtBefore(Date updatedAt) {
         this.eventHeartbeatRepository.deleteByUpdatedAtBefore(updatedAt);
     }
 
-    @Transactional
     public EventHeartbeat getByExecutionNode(String executionNode) {
         return this.eventHeartbeatRepository.getByExecutionNode(executionNode);
     }
 
     @Transactional
-    public void beat(Date clearOlderThanDate) {
-        deleteByUpdatedAtBefore(clearOlderThanDate);
-        EventHeartbeat eventHeartbeat = eventHeartbeatRepository.getByExecutionNode(hostUtilService.getHostname());
-        if (eventHeartbeat == null) {
-            eventHeartbeat = EventHeartbeat.builder().executionNode(hostUtilService.getHostname()).build();
+    public void beatNode(Date updatedAt) {
+        String hostName = hostUtilService.getHostname();
+        int updateCount = this.eventHeartbeatRepository.updateBeatDateByExecutionNode(hostName, updatedAt);
+        if (updateCount == 0) {
+            EventHeartbeat eventHeartbeat = EventHeartbeat.builder().executionNode(hostName).updatedAt(updatedAt).build();
             eventHeartbeatRepository.save(eventHeartbeat);
-        } else {
-            eventHeartbeat.setContextId(requestContextService.create().getId());
         }
     }
 
