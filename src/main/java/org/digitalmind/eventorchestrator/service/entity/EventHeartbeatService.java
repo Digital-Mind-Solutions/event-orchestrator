@@ -30,6 +30,7 @@ public class EventHeartbeatService {
         this.count = 100;
     }
 
+    @Transactional
     public void deleteByUpdatedAtBefore(Date updatedAt) {
         this.eventHeartbeatRepository.deleteByUpdatedAtBefore(updatedAt);
     }
