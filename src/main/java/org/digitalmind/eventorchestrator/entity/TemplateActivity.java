@@ -69,11 +69,11 @@ public class TemplateActivity extends ContextVersionableAuditModel implements Id
     private String executorExpr2;
 
     @ApiModelProperty(value = "The sub status SPEL", required = false)
-    @Column(name = "system_memo_expr2", length = 5000)
+    @Column(name = "system_memo_expr2", length = 1000)
     private String systemMemoExpr2;
 
     @ApiModelProperty(value = "The entity name SPEL", required = false)
-    @Column(name = "entity_name_expr", length = 5000)
+    @Column(name = "entity_name_expr", length = 1000)
     private String entityNameExpr;
 
     @ApiModelProperty(value = "The entity id SPEL", required = false)
@@ -99,11 +99,11 @@ public class TemplateActivity extends ContextVersionableAuditModel implements Id
     private EventVisibility visibilityDefault;
 
     @ApiModelProperty(value = "The privacy id SPEL", required = false)
-    @Column(name = "privacy_id_expr", length = 10000)
+    @Column(name = "privacy_id_expr", length = 1000)
     private String privacyIdExpr;
 
     @ApiModelProperty(value = "The priority id SPEL (lower is more important)", required = false)
-    @Column(name = "priority_expr", length = 10000)
+    @Column(name = "priority_expr", length = 1000)
     private String priorityExpr;
 
     @ApiModelProperty(value = "The event activity execution type", required = false)
