@@ -714,6 +714,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                     .parentId(eventActivity.getParentMemoId())
                     .processName(eventActivity.getProcessName())
                     .processId(eventActivity.getProcessId())
+                    .activityId(eventActivity.getId())
                     .type(eventActivity.getType())
                     .code(eventActivity.getCode())
                     .entityName(eventActivity.getEntityName())

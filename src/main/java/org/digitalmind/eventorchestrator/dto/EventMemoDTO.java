@@ -23,7 +23,7 @@ import java.util.Map;
         {
                 "id",
                 "processId", "parentId",
-                "type", "code",
+                "activityId", "type", "code",
                 "status", "statusDescription",
                 "systemMemo",
                 "entityName", "entityId",
@@ -43,6 +43,9 @@ public class EventMemoDTO extends AuditDTO {
 
     @ApiModelProperty(value = "The id of the parent memo (if applicable)", required = false)
     private Long parentId;
+
+    @ApiModelProperty(value = "The process activity id", required = true)
+    private Long activityId;
 
     @ApiModelProperty(value = "The process activity type", required = true)
     private EventActivityType type;

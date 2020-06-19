@@ -67,6 +67,10 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     @Column(name = "parent_id")
     private Long parentId;
 
+    @ApiModelProperty(value = "The id of the activity (if applicable)", required = false)
+    @Column(name = "activity_id")
+    private Long activityId;
+
     @ApiModelProperty(value = "The process activity type", required = true)
     @Column(name = "type", length = 50)
     @Enumerated(EnumType.STRING)

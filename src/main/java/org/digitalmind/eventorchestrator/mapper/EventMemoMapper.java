@@ -83,6 +83,7 @@ public abstract class EventMemoMapper implements IMapper {
                 .id(eventMemo.getId())
                 .processId(eventMemo.getProcessId())
                 .parentId(eventMemo.getParentId())
+                .activityId(eventMemo.getActivityId())
                 .type(eventMemo.getType())
                 .code(codeI18n)
                 .status(eventMemo.getStatus())
