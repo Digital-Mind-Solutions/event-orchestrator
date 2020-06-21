@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
 import org.digitalmind.buildingblocks.core.beanutils.service.SpringBeanUtil;
 import org.digitalmind.buildingblocks.core.requestcontext.dto.RequestContext;
-import org.digitalmind.buildingblocks.core.requestcontext.dto.impl.RequestContextBasic;
 import org.digitalmind.buildingblocks.core.requestcontext.service.RequestContextService;
 import org.digitalmind.buildingblocks.core.spel.service.SpelService;
 import org.digitalmind.eventorchestrator.config.EventOrchestratorConfig;
@@ -440,7 +439,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
 
     public RequestContext getOrDefault(RequestContext requestContext) {
         if (requestContext == null) {
-            return RequestContextBasic.builder().build();
+            requestContext = requestContextService.create();
         }
         return requestContext;
     }
@@ -791,9 +790,9 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
 
             processMemoBuilder.status(EventMemoStatus.ERROR);
             processMemoBuilder.statusDescription(statusDescription);
-
-
             eventActivity.setStatusDescription(statusDescription);
+
+
             switch (exceptionType) {
 
                 case RETRY:
