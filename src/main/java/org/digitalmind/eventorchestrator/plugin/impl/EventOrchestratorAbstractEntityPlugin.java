@@ -45,6 +45,7 @@ public abstract class EventOrchestratorAbstractEntityPlugin implements EventOrch
             if (i >= 0) {
                 return name.substring(i + 1);
             }
+            return name;
         }
         return null;
     }

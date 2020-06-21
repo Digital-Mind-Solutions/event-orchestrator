@@ -878,8 +878,8 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         if (name == null) {
             return null;
         }
-
-        return eventOrchestratorPluginRegistry.getPluginFor(name).getEntityAlias(unproxyClassName(name));
+        name = unproxyClassName(name);
+        return eventOrchestratorPluginRegistry.getPluginFor(name).getEntityAlias(name);
     }
 
     @Override
