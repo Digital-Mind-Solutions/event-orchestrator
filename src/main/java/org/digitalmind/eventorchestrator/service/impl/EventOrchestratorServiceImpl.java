@@ -480,7 +480,8 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         if (trigger != null && trigger instanceof Collection) {
             RequestContext finalRequestContext = requestContext;
             String finalCode = code;
-            ((Collection) trigger).forEach(triggerItem -> triggerEventActivities(finalRequestContext, processId, processName, parentMemoId, finalCode, status, triggerItem));
+            String finalProcessName = processName;
+            ((Collection) trigger).forEach(triggerItem -> triggerEventActivities(finalRequestContext, processId, finalProcessName, parentMemoId, finalCode, status, triggerItem));
             return;
         }
         log.info("triggerEventActivities requestContext={}, processId={}, processName={}, parentMemoId={}, code={}, status={}, trigger={}", requestContext, processId, processName, parentMemoId, code, status, trigger.getClass().getSimpleName());
