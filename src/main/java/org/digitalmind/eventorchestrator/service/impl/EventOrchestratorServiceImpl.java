@@ -476,6 +476,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
 
     public void triggerEventActivities(RequestContext requestContext, Long processId, String processName, Long parentMemoId, String code, String status, Object trigger) {
         requestContext = getOrDefault(requestContext);
+        processName = getEntityAlias(processName);
         if (trigger != null && trigger instanceof Collection) {
             RequestContext finalRequestContext = requestContext;
             String finalCode = code;
@@ -657,7 +658,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                     EventActivity.EventActivityBuilder processActivityBuilder = EventActivity.builder()
                             .contextId(requestContext.getId())
                             .processId((process != null) ? process.getId() : null)
-                            .processName((process != null) ? getEntityAlias(process.getClass().getName()) : null)
+                            .processName((process != null) ? getEntityAlias(process) : null)
                             .parentMemoId(parentMemoId)
                             .type(templateActivity.getType())
                             .executionType(templateActivity.getExecutionType())
@@ -860,13 +861,34 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         return eventOrchestratorPluginRegistry.getPluginFor(name).getEntity(name, entityId);
     }
 
+    private String unproxyClassName(String className) {
+        if (className == null) {
+            return null;
+        }
+        if (className.contains("$")) {
+            return className.substring(0, className.indexOf("$"));
+        }
+        return className;
+    }
+
+
     @Override
     public String getEntityAlias(String name) {
         if (name == null) {
             return null;
         }
-        return eventOrchestratorPluginRegistry.getPluginFor(name).getEntityAlias(name);
+
+        return eventOrchestratorPluginRegistry.getPluginFor(name).getEntityAlias(unproxyClassName(name));
     }
+
+    @Override
+    public String getEntityAlias(Object entity) {
+        if (entity == null) {
+            return null;
+        }
+        return getEntityAlias(entity.getClass().getName());
+    }
+
 
     @Override
     public EventRetryPolicy getRetryPolicy(String code, int retry) {

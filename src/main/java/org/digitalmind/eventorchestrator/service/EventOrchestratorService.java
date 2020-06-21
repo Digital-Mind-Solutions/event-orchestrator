@@ -28,6 +28,8 @@ public interface EventOrchestratorService extends IService {
 
     String getEntityAlias(String name);
 
+    String getEntityAlias(Object entity);
+
     EventRetryPolicy getRetryPolicy(String code, int retry);
 
 }
