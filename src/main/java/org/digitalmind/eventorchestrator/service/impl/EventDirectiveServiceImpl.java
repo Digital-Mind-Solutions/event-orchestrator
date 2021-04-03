@@ -112,7 +112,8 @@ public class EventDirectiveServiceImpl implements EventDirectiveService, Runnabl
             @Override
             public Map<ConfigurationDirectiveKey, List<EventDirective>> loadAll(Iterable<? extends ConfigurationDirectiveKey> keys) throws Exception {
                 Map<ConfigurationDirectiveKey, List<EventDirective>> cacheList = new HashMap<>();
-                Sort sortBy = new Sort(Sort.Direction.ASC, "entityName", "type", "priority");
+                //Sort sortBy = new Sort(Sort.Direction.ASC, "entityName", "type", "priority");
+                Sort sortBy = Sort.by(Sort.Direction.DESC,"entityName", "type", "priority");
                 List<EventDirective> eventDirectiveList = eventDirectiveRepository.findAll(sortBy);
                 ConfigurationDirectiveKey key = null;
                 ConfigurationDirectiveKey keyPrevious = null;
