@@ -879,7 +879,16 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             return null;
         }
         name = unproxyClassName(name);
-        return eventOrchestratorPluginRegistry.getPluginFor(name).getEntityAlias(name);
+        Object pluginFor = eventOrchestratorPluginRegistry.getPluginFor(name);
+        if (pluginFor != null) {
+            if (pluginFor instanceof EventOrchestratorEntityPlugin) {
+                return ((EventOrchestratorEntityPlugin) pluginFor).getEntityAlias(name);
+            }
+            if (pluginFor instanceof Optional && (((Optional) pluginFor).get() != null)) {
+                return ((EventOrchestratorEntityPlugin) ((Optional) pluginFor).get()).getEntityAlias(name);
+            }
+        }
+        return null;
     }
 
     @Override
