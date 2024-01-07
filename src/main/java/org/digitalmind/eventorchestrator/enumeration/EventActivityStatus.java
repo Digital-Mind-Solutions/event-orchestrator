@@ -6,6 +6,6 @@ public enum EventActivityStatus {
     PENDING_RETRY,
     QUEUED,
     SUCCESS,
-    ERROR;
+    ERROR,
     PARKED;
 }
