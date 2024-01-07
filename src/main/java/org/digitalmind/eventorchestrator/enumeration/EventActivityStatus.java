@@ -7,4 +7,5 @@ public enum EventActivityStatus {
     QUEUED,
     SUCCESS,
     ERROR;
+    PARKED;
 }
