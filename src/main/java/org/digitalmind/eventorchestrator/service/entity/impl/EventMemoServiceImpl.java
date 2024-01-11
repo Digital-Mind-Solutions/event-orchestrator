@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service("processMemoService")
@@ -48,4 +49,8 @@ public class EventMemoServiceImpl implements EventMemoService {
         return eventMemoRepository.saveAll(eventMemos);
     }
 
+    public EventMemo findById(Long memoId) {
+        Optional<EventMemo> memo = this.eventMemoRepository.findById(memoId);
+        return memo.isPresent() ? (EventMemo)memo.get() : null;
+    }
 }

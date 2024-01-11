@@ -1,10 +1,12 @@
 package org.digitalmind.eventorchestrator.service.entity;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.DateUtils;
 import org.digitalmind.buildingblocks.core.beanutils.service.IService;
 import org.digitalmind.buildingblocks.core.networkutils.service.HostUtilService;
 import org.digitalmind.buildingblocks.core.spel.service.impl.SpelServiceImpl;
 import org.digitalmind.eventorchestrator.entity.EventActivity;
+import org.digitalmind.eventorchestrator.entity.EventMemo;
 import org.digitalmind.eventorchestrator.enumeration.EventActivityStatus;
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
 import org.digitalmind.eventorchestrator.repository.EventActivityRepository;
@@ -20,10 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.LockTimeoutException;
 import javax.persistence.PessimisticLockException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -210,6 +209,14 @@ public class EventActivityService implements IService {
     @Transactional
     public void requeue(EventActivity eventActivity) {
         requeue(eventActivity, org.apache.commons.lang3.time.DateUtils.addSeconds(new Date(), 60));
+    }
+
+    @Transactional
+    public void requeue(EventMemo eventMemo) {
+        Optional<EventActivity> eventActivity = this.eventActivityRepository.findById(eventMemo.getActivityId());
+        if (eventActivity.isPresent()) {
+            this.requeue((EventActivity)eventActivity.get(), DateUtils.addSeconds(new Date(), 60));
+        }
     }
 
     @Transactional

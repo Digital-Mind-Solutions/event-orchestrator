@@ -12,6 +12,8 @@ public interface EventMemoService {
 
     EventMemo save(EventMemo eventMemo);
 
+    EventMemo findById(Long memoId);
+
     Page<EventMemo> findAllByProcessId(Long processId, Pageable pageRequest);
 
     Page<EventMemo> findAllByProcessIdAndVisibleAndPrivacyId(
