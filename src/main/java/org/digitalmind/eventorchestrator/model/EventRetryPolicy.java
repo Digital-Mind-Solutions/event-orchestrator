@@ -13,5 +13,5 @@ import org.digitalmind.eventorchestrator.enumeration.ExceptionType;
 @AllArgsConstructor
 public class EventRetryPolicy {
     private ExceptionType exceptionType;
-    private Integer delay;
+    private Integer delay ;
 }
