@@ -18,9 +18,10 @@ ext {
     //swaggerCodegenVersion = '2.4.0'
 }
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = "21"
+    targetCompatibility = "21"
 }
+
 bootJar {
     enabled = false
 }
@@ -54,15 +55,15 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation "org.springframework.boot:spring-boot-starter-security"
 
-    implementation "org.digitalmind.buildingblocks.core:dtobase:1.0.0"
-    implementation "org.digitalmind.buildingblocks.core:beanutils:1.0.0"
-    implementation "org.digitalmind.buildingblocks.core:spelutils:1.0.0"
-    implementation "org.digitalmind.buildingblocks.core:networkutils:1.0.0"
-    implementation "org.digitalmind.buildingblocks.core:requestcontext:1.0.0"
-    implementation "org.digitalmind.buildingblocks.templating:templating-core:1.0.0"
-    implementation "org.digitalmind.buildingblocks.core:jpautils:1.0.0"
+    implementation "org.digitalmind.buildingblocks.core:dtobase:2.0.1"
+    implementation "org.digitalmind.buildingblocks.core:beanutils:2.0.1"
+    implementation "org.digitalmind.buildingblocks.core:spelutils:2.0.1"
+    implementation "org.digitalmind.buildingblocks.core:networkutils:2.0.1"
+    implementation "org.digitalmind.buildingblocks.core:requestcontext:2.0.1"
+    implementation "org.digitalmind.buildingblocks.templating:templating-core:2.0.1"
+    implementation "org.digitalmind.buildingblocks.core:jpautils:2.0.1"
 
-    compile 'commons-io:commons-io:2.6'
+    implementation 'commons-io:commons-io:2.6'
 
     implementation "org.projectlombok:lombok:${lombokVersion}"
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
@@ -76,11 +77,11 @@ dependencies {
     implementation 'com.github.jknack:handlebars-jackson2:4.1.2'
     implementation 'org.beryx:handlebars-java-helpers:0.4.1'
 
-    implementation "io.springfox:springfox-swagger-ui:${springfoxVersion}"
-    implementation "io.springfox:springfox-swagger2:${springfoxVersion}"
-    implementation "io.swagger:swagger-annotations:${swaggerVersion}"
-    implementation "io.swagger:swagger-models:${swaggerVersion}"
-    implementation "io.swagger:swagger-core:${swaggerVersion}"
+    //implementation "io.springfox:springfox-swagger-ui:${springfoxVersion}"
+    //implementation "io.springfox:springfox-swagger2:${springfoxVersion}"
+    //implementation "io.swagger:swagger-annotations:${swaggerVersion}"
+    //implementation "io.swagger:swagger-models:${swaggerVersion}"
+    //implementation "io.swagger:swagger-core:${swaggerVersion}"
 }
 
 publishing {
