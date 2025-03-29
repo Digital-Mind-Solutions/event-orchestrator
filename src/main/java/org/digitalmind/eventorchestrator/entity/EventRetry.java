@@ -1,8 +1,7 @@
 package org.digitalmind.eventorchestrator.entity;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
@@ -11,7 +10,7 @@ import org.digitalmind.eventorchestrator.enumeration.EventRetryDelayType;
 import org.digitalmind.eventorchestrator.enumeration.ExceptionType;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import static org.digitalmind.eventorchestrator.entity.EventRetry.TABLE_NAME;
 
@@ -41,7 +40,7 @@ import static org.digitalmind.eventorchestrator.entity.EventRetry.TABLE_NAME;
                 "createdAt", "createdBy", "updatedAt", "updatedBy"
         }
 )
-@ApiModel(value = "EventRetry", description = "Event retry")
+@Schema(name = "EventRetry", description = "Event retry")
 @ToString(callSuper = true)
 public class EventRetry extends ContextVersionableAuditModel implements IdModel<Long> {
 
@@ -49,33 +48,33 @@ public class EventRetry extends ContextVersionableAuditModel implements IdModel<
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Unique id of the event retry definition", required = false)
+    @Schema(name = "Unique id of the event retry definition", required = false)
     @Column(name = "id")
     private Long id;
 
-    @ApiModelProperty(value = "The event code", required = true)
+    @Schema(name = "The event code", required = true)
     @Column(name = "code")
     private String code;
 
-    @ApiModelProperty(value = "The interval that applies for the policy", required = true)
+    @Schema(name = "The interval that applies for the policy", required = true)
     @Column(name = "from_value")
     private Integer fromValue;
 
-    @ApiModelProperty(value = "The interval that applies for the policy", required = true)
+    @Schema(name = "The interval that applies for the policy", required = true)
     @Column(name = "to_value")
     private Integer toValue;
 
-    @ApiModelProperty(value = "The exception type", required = true)
+    @Schema(name = "The exception type", required = true)
     @Column(name = "exception_type", length = 50)
     @Enumerated(EnumType.STRING)
     private ExceptionType exceptionType;
 
-    @ApiModelProperty(value = "The exception delay type", required = true)
+    @Schema(name = "The exception delay type", required = true)
     @Column(name = "delay_type", length = 50)
     @Enumerated(EnumType.STRING)
     private EventRetryDelayType delayType;
 
-    @ApiModelProperty(value = "The retry delay in seconds", required = true)
+    @Schema(name = "The retry delay in seconds", required = true)
     @Column(name = "delay")
     private Integer delay;
 

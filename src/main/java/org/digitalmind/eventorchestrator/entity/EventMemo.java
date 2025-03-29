@@ -1,8 +1,7 @@
 package org.digitalmind.eventorchestrator.entity;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
@@ -13,7 +12,7 @@ import org.digitalmind.eventorchestrator.enumeration.EventMemoStatus;
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Map;
 
 import static org.digitalmind.eventorchestrator.entity.EventMemo.TABLE_NAME;
@@ -42,7 +41,7 @@ import static org.digitalmind.eventorchestrator.entity.EventMemo.TABLE_NAME;
                 "createdAt", "createdBy", "updatedAt", "updatedBy"
         }
 )
-@ApiModel(value = "ProcessMemo", description = "Process memo")
+@Schema(name = "ProcessMemo", description = "Process memo")
 @ToString(callSuper = true)
 public class EventMemo extends ContextVersionableAuditModel implements ProcessAuditModel, IdModel<Long> {
 
@@ -50,76 +49,76 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Unique id of the process activity", required = false)
+    @Schema(name = "Unique id of the process activity", required = false)
     @Column(name = "id")
     private Long id;
 
-    @ApiModelProperty(value = "The name of the process", required = false)
+    @Schema(name = "The name of the process", required = false)
     @Column(name = "process_name", length = 500)
     private String processName;
 
-    @ApiModelProperty(value = "The id of the process", required = false)
+    @Schema(name = "The id of the process", required = false)
     @Column(name = "process_id")
     //@NonNull
     private Long processId;
 
-    @ApiModelProperty(value = "The id of the parent memo (if applicable)", required = false)
+    @Schema(name = "The id of the parent memo (if applicable)", required = false)
     @Column(name = "parent_id")
     private Long parentId;
 
-    @ApiModelProperty(value = "The id of the activity (if applicable)", required = false)
+    @Schema(name = "The id of the activity (if applicable)", required = false)
     @Column(name = "activity_id")
     private Long activityId;
 
-    @ApiModelProperty(value = "The process activity type", required = true)
+    @Schema(name = "The process activity type", required = true)
     @Column(name = "type", length = 50)
     @Enumerated(EnumType.STRING)
     private EventActivityType type;
 
-    @ApiModelProperty(value = "The activity code", required = false)
+    @Schema(name = "The activity code", required = false)
     @Column(name = "code")
     private String code;
 
-    @ApiModelProperty(value = "The status of the memo (disqualified, success or error)", required = false)
+    @Schema(name = "The status of the memo (disqualified, success or error)", required = false)
     @Column(name = "status", length = 50)
     @Enumerated(EnumType.STRING)
     private EventMemoStatus status;
 
-    @ApiModelProperty(value = "The status description of the memo (error message)", required = false)
+    @Schema(name = "The status description of the memo (error message)", required = false)
     @Column(name = "status_description", length = 4000)
     private String statusDescription;
 
-    @ApiModelProperty(value = "The system memo", required = false)
+    @Schema(name = "The system memo", required = false)
     @Column(name = "system_memo", length = 500)
     private String systemMemo;
 
-    @ApiModelProperty(value = "The entity name", required = false)
+    @Schema(name = "The entity name", required = false)
     @Column(name = "entity_name", length = 500)
     private String entityName;
 
-    @ApiModelProperty(value = "The entity id", required = false)
+    @Schema(name = "The entity id", required = false)
     @Column(name = "entity_id")
     private String entityId;
 
-    @ApiModelProperty(value = "The process memo parameters", required = false)
+    @Schema(name = "The process memo parameters", required = false)
     @Column(name = "parameters")
     @Singular
     @Convert(converter = JpaMapJsonConverter.class)
     @Lob
     private Map<String, Object> parameters;
 
-    @ApiModelProperty(value = "The memo context", required = false)
+    @Schema(name = "The memo context", required = false)
     @Column(name = "context")
     @Convert(converter = JpaMapJsonConverter.class)
     @Lob
     private Map<String, Object> context;
 
-    @ApiModelProperty(value = "The memo visibility", required = false)
+    @Schema(name = "The memo visibility", required = false)
     @Column(name = "visibility")
     @Enumerated(EnumType.ORDINAL)
     private EventVisibility visibility;
 
-    @ApiModelProperty(value = "The privacy id", required = false)
+    @Schema(name = "The privacy id", required = false)
     @Column(name = "privacy_id")
     private Long privacyId;
 

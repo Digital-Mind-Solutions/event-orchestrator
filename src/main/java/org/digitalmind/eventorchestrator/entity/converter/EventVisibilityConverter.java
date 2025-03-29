@@ -2,8 +2,8 @@ package org.digitalmind.eventorchestrator.entity.converter;
 
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import java.util.stream.Stream;
 
 @Converter(autoApply = false)

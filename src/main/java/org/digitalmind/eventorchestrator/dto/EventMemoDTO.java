@@ -3,8 +3,7 @@ package org.digitalmind.eventorchestrator.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.digitalmind.buildingblocks.core.dtobase.AuditDTO;
@@ -32,51 +31,51 @@ import java.util.Map;
                 "createdAt", "createdBy", "updatedAt", "updatedBy"
         }
 )
-@ApiModel(value = "ProcessMemoDTO", description = "The process memo.")
+@Schema(name = "ProcessMemoDTO", description = "The process memo.")
 public class EventMemoDTO extends AuditDTO {
 
-    @ApiModelProperty(value = "Unique id of the process memo", required = false)
+    @Schema(name = "Unique id of the process memo", required = false)
     private Long id;
 
-    @ApiModelProperty(value = "The id of the process", required = false)
+    @Schema(name = "The id of the process", required = false)
     private Long processId;
 
-    @ApiModelProperty(value = "The id of the parent memo (if applicable)", required = false)
+    @Schema(name = "The id of the parent memo (if applicable)", required = false)
     private Long parentId;
 
-    @ApiModelProperty(value = "The process activity id", required = true)
+    @Schema(name = "The process activity id", required = true)
     private Long activityId;
 
-    @ApiModelProperty(value = "The process activity type", required = true)
+    @Schema(name = "The process activity type", required = true)
     private EventActivityType type;
 
-    @ApiModelProperty(value = "The memo code", required = false)
+    @Schema(name = "The memo code", required = false)
     private String code;
 
-    @ApiModelProperty(value = "The status of the activity (disqualified, success or error)", required = false)
+    @Schema(name = "The status of the activity (disqualified, success or error)", required = false)
     private EventMemoStatus status;
 
-    @ApiModelProperty(value = "The status description of the memo (error message)", required = false)
+    @Schema(name = "The status description of the memo (error message)", required = false)
     private String statusDescription;
 
-    @ApiModelProperty(value = "The system memo", required = false)
+    @Schema(name = "The system memo", required = false)
     private String systemMemo;
 
-    @ApiModelProperty(value = "The entity name", required = false)
+    @Schema(name = "The entity name", required = false)
     private String entityName;
 
-    @ApiModelProperty(value = "The entity id", required = false)
+    @Schema(name = "The entity id", required = false)
     private String entityId;
 
-    @ApiModelProperty(value = "The process memo parameters", required = false)
+    @Schema(name = "The process memo parameters", required = false)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Map<String, Object> parameters;
 
-    @ApiModelProperty(value = "The memo context", required = false)
+    @Schema(name = "The memo context", required = false)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Map<String, Object> context;
 
-    @ApiModelProperty(value = "The memo context id", required = false)
+    @Schema(name = "The memo context id", required = false)
     private String contextId;
 
 }
