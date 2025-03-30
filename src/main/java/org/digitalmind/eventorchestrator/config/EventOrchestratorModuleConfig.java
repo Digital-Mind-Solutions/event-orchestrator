@@ -1,14 +1,10 @@
 package org.digitalmind.eventorchestrator.config;
 
-import org.digitalmind.eventorchestrator.plugin.EventOrchestratorEntityPlugin;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.plugin.core.OrderAwarePluginRegistry;
-import org.springframework.plugin.core.PluginRegistry;
-
-import java.util.List;
 
 import static org.digitalmind.eventorchestrator.config.EventOrchestratorModuleConfig.*;
 
@@ -21,7 +17,7 @@ import static org.digitalmind.eventorchestrator.config.EventOrchestratorModuleCo
         MAPPER_PACKAGE,
         API_PACKAGE
 })
-@ConditionalOnProperty(name = ENABLED, havingValue = "true")
+@ConditionalOnProperty(name = EventOrchestratorModuleConfig.ENABLED, havingValue = "true")
 public class EventOrchestratorModuleConfig {
 
     public static final String MODULE = "eventorchestrator";
@@ -42,13 +38,7 @@ public class EventOrchestratorModuleConfig {
 
     public static final String CACHE_NAME = MODULE + "-cache";
 
-
     public static final String EVENT_ORCHESTRATOR_PLUGIN_REGISTRY = "eventOrchestratorPluginRegistry";
 
-    @Bean(EVENT_ORCHESTRATOR_PLUGIN_REGISTRY)
-    public PluginRegistry<EventOrchestratorEntityPlugin, String> eventOrchestratorPluginRegistry(List<? extends EventOrchestratorEntityPlugin> eventOrchestratorPlugins) {
-        PluginRegistry<EventOrchestratorEntityPlugin, String> pluginRegistry = OrderAwarePluginRegistry.create(eventOrchestratorPlugins);
-        return pluginRegistry;
-    }
 }
 

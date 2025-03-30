@@ -4,9 +4,10 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.digitalmind.buildingblocks.core.jpautils.converter.JpaMapJsonConverter;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.IdModel;
-import org.digitalmind.eventorchestrator.converter.JpaMapJsonConverter;
+
 import org.digitalmind.eventorchestrator.enumeration.EventActivityType;
 import org.digitalmind.eventorchestrator.enumeration.EventMemoStatus;
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;

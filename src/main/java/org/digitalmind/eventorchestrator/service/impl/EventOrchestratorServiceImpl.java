@@ -16,6 +16,7 @@ import org.digitalmind.buildingblocks.core.requestcontext.dto.RequestContext;
 import org.digitalmind.buildingblocks.core.requestcontext.service.RequestContextService;
 import org.digitalmind.buildingblocks.core.spel.service.SpelService;
 import org.digitalmind.eventorchestrator.config.EventOrchestratorConfig;
+import org.digitalmind.eventorchestrator.config.EventOrchestratorPluginRegistry;
 import org.digitalmind.eventorchestrator.entity.*;
 import org.digitalmind.eventorchestrator.enumeration.*;
 import org.digitalmind.eventorchestrator.exception.EventOrchestratorException;
@@ -37,7 +38,6 @@ import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.expression.EvaluationContext;
-import org.springframework.plugin.core.PluginRegistry;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,7 +64,8 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
     private EventOrchestratorService self;
 
     private final EventOrchestratorConfig config;
-    private final PluginRegistry<EventOrchestratorEntityPlugin, String> eventOrchestratorPluginRegistry;
+
+    EventOrchestratorPluginRegistry eventOrchestratorPluginRegistry;
 
     private final SpringBeanUtil springBeanUtil;
     //private final EventMemoRepository eventMemoRepository;
@@ -114,9 +115,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
     @Autowired
     public EventOrchestratorServiceImpl(
             EventOrchestratorConfig config,
-            @Qualifier(EVENT_ORCHESTRATOR_PLUGIN_REGISTRY) PluginRegistry<EventOrchestratorEntityPlugin, String>
-                    eventOrchestratorPluginRegistry,
-            PluginRegistry<EventOrchestratorEntityPlugin, String> eventOrchestratorPluginRegistry1,
+            @Qualifier(EVENT_ORCHESTRATOR_PLUGIN_REGISTRY) EventOrchestratorPluginRegistry eventOrchestratorPluginRegistry,
             SpringBeanUtil springBeanUtil,
             EventMemoRepository eventMemoRepository,
             EventActivityRepository eventActivityRepository,
@@ -859,7 +858,10 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
     @Override
     public Object getEntity(String name, Object id) {
         String entityId = (id != null) ? String.valueOf(id) : null;
-        return eventOrchestratorPluginRegistry.getPluginFor(name).getEntity(name, entityId);
+
+        return eventOrchestratorPluginRegistry.getPluginFor(name)
+                .map(plugin -> plugin.getEntity(name, entityId))
+                .orElseThrow(() -> new IllegalArgumentException("No plugin found for entity name: " + name));
     }
 
     private String unproxyClassName(String className) {

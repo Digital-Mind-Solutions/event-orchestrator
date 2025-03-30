@@ -109,11 +109,6 @@ public class EventDirectiveListener implements
     }
 
     @Override
-    public boolean requiresPostCommitHanding(EntityPersister persister) {
-        return false;
-    }
-
-    @Override
     public boolean requiresPostCommitHandling(EntityPersister persister) {
         return false;
     }
