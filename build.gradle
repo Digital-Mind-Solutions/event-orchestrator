@@ -65,7 +65,7 @@ dependencies {
     implementation "org.digitalmind.buildingblocks.core:networkutils:2.0.1"
     implementation "org.digitalmind.buildingblocks.core:requestcontext:2.0.1"
     implementation "org.digitalmind.buildingblocks.templating:templating-core:2.0.1"
-    implementation "org.digitalmind.buildingblocks.core:jpautils:2.0.2"
+    implementation "org.digitalmind.buildingblocks.core:jpautils:2.0.1"
 
     implementation 'commons-io:commons-io:2.18.0'
 
