@@ -44,8 +44,8 @@ repositories {
         name = "digitalmind"
         url = uri("https://maven.pkg.github.com/Digital-Mind-Solutions/maven-repository")
         credentials {
-            username = project.findProperty("dm.ghub.user") ?: System.getenv("DM_GITHUB_USER")
-            password = project.findProperty("dm.ghub.key") ?: System.getenv("DM_GITHUB_TOKEN")
+            username = project.findProperty("dm.user")
+            password = project.findProperty("dm.key")
         }
     }
 }
@@ -91,8 +91,8 @@ publishing {
             name = "digitalmind"
             url = uri("https://maven.pkg.github.com/Digital-Mind-Solutions/maven-repository")
             credentials {
-                username = project.findProperty("dm.ghub.user") ?: System.getenv("DM_GITHUB_USER")
-                password = project.findProperty("dm.ghub.key") ?: System.getenv("DM_GITHUB_TOKEN")
+                username = project.findProperty("dm.user")
+                password = project.findProperty("dm.key")
             }
         }
     }
