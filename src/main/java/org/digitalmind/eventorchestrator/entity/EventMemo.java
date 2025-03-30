@@ -101,14 +101,14 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     private String entityId;
 
     @Schema(name = "The process memo parameters", required = false)
-    @Column(name = "parameters", columnDefinition = "oid")
+    @Column(name = "parameters", columnDefinition = "text")
     @Singular
     @Convert(converter = JpaMapStringObjectJsonConverter.class)
     @Lob
     private Map<String, Object> parameters;
 
     @Schema(name = "The memo context", required = false)
-    @Column(name = "context", columnDefinition = "oid")
+    @Column(name = "context", columnDefinition = "text")
     @Convert(converter = JpaMapStringObjectJsonConverter.class)
     @Lob
     private Map<String, Object> context;

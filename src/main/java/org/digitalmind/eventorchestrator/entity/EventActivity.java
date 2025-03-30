@@ -133,7 +133,7 @@ public class EventActivity extends ContextVersionableAuditModel implements IdMod
     private String entityId;
 
     @Schema(name = "The process activity parameters", required = false)
-    @Column(name = "parameters", columnDefinition = "oid")
+    @Column(name = "parameters", columnDefinition = "text")
     @Singular
     @Convert(converter = JpaMapStringObjectJsonConverter.class)
     @Lob
@@ -150,7 +150,7 @@ public class EventActivity extends ContextVersionableAuditModel implements IdMod
     private EventActivityExecutionType executionType = EventActivityExecutionType.SERIAL_ENTITY;
 
     @Schema(name = "The process activity context", required = false)
-    @Column(name = "context", columnDefinition = "oid")
+    @Column(name = "context", columnDefinition = "text")
     @Singular("context")
     @Convert(converter = JpaMapStringObjectJsonConverter.class)
     @Lob
