@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.digitalmind.buildingblocks.core.jpautils.converter.JpaMapJsonConverter;
+import org.digitalmind.buildingblocks.core.jpautils.converter.JpaMapStringObjectJsonConverter;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.IdModel;
 import org.digitalmind.eventorchestrator.enumeration.EventActivityExecutionType;
@@ -135,7 +135,7 @@ public class EventActivity extends ContextVersionableAuditModel implements IdMod
     @Schema(name = "The process activity parameters", required = false)
     @Column(name = "parameters")
     @Singular
-    @Convert(converter = JpaMapJsonConverter.class)
+    @Convert(converter = JpaMapStringObjectJsonConverter.class)
     @Lob
     private Map<String, Object> parameters;
 
@@ -152,7 +152,7 @@ public class EventActivity extends ContextVersionableAuditModel implements IdMod
     @Schema(name = "The process activity context", required = false)
     @Column(name = "context")
     @Singular("context")
-    @Convert(converter = JpaMapJsonConverter.class)
+    @Convert(converter = JpaMapStringObjectJsonConverter.class)
     @Lob
     private Map<String, Object> context;
 

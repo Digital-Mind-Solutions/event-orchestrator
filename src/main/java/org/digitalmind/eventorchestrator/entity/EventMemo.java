@@ -2,18 +2,17 @@ package org.digitalmind.eventorchestrator.entity;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.digitalmind.buildingblocks.core.jpautils.converter.JpaMapJsonConverter;
+import org.digitalmind.buildingblocks.core.jpautils.converter.JpaMapStringObjectJsonConverter;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.IdModel;
-
 import org.digitalmind.eventorchestrator.enumeration.EventActivityType;
 import org.digitalmind.eventorchestrator.enumeration.EventMemoStatus;
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import jakarta.persistence.*;
 import java.util.Map;
 
 import static org.digitalmind.eventorchestrator.entity.EventMemo.TABLE_NAME;
@@ -104,13 +103,13 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     @Schema(name = "The process memo parameters", required = false)
     @Column(name = "parameters")
     @Singular
-    @Convert(converter = JpaMapJsonConverter.class)
+    @Convert(converter = JpaMapStringObjectJsonConverter.class)
     @Lob
     private Map<String, Object> parameters;
 
     @Schema(name = "The memo context", required = false)
     @Column(name = "context")
-    @Convert(converter = JpaMapJsonConverter.class)
+    @Convert(converter = JpaMapStringObjectJsonConverter.class)
     @Lob
     private Map<String, Object> context;
 
