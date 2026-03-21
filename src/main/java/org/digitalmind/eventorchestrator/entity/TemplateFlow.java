@@ -2,8 +2,7 @@ package org.digitalmind.eventorchestrator.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -12,8 +11,8 @@ import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAud
 import org.digitalmind.buildingblocks.core.jpautils.entity.IdModel;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 
 import static org.digitalmind.eventorchestrator.entity.TemplateFlow.TABLE_NAME;
 
@@ -27,7 +26,7 @@ import static org.digitalmind.eventorchestrator.entity.TemplateFlow.TABLE_NAME;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 
-@ApiModel(value = "TemplateFlow", description = "Process template flows defined in the signing process.")
+@Schema(description = "Process template flows defined in the signing process.")
 @JsonPropertyOrder(
         {
                 "id", "flowTemplate", "usecase",
@@ -41,15 +40,15 @@ public class TemplateFlow extends ContextVersionableAuditModel implements IdMode
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
-    @ApiModelProperty(value = "Unique id of the template signFlow configuration", required = false)
+    @Schema(description = "Unique id of the template signFlow configuration")
     private Long id;
 
     @NotNull
     @Column(name = "flow_template")
-    @ApiModelProperty(value = "Process flow template. Based on this different attribute the process flow will be executed differently ", required = true)
+    @Schema(description = "Process flow template. Based on this different attribute the process flow will be executed differently ", requiredMode = Schema.RequiredMode.REQUIRED)
     private String flowTemplate;
 
-    @ApiModelProperty(value = "The signFlow code", required = false)
+    @Schema(description = "The signFlow code")
     @Column(name = "usecase")
     private String usecase;
 

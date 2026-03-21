@@ -2,8 +2,7 @@ package org.digitalmind.eventorchestrator.dto;
 
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.digitalmind.buildingblocks.core.dtobase.AuditDTO;
@@ -34,67 +33,67 @@ import java.util.Map;
                 "createdAt", "createdBy", "updatedAt", "updatedBy"
         }
 )
-@ApiModel(value = "ProcessActivityDTO", description = "The process activity.")
+@Schema(description = "The process activity.")
 public class EventActivityDTO extends AuditDTO {
 
-    @ApiModelProperty(value = "Unique id of the process activity", required = false)
+    @Schema(description = "Unique id of the process activity")
     private Long id;
 
-    @ApiModelProperty(value = "The id of the process", required = false)
+    @Schema(description = "The id of the process")
     private Long processId;
 
-    @ApiModelProperty(value = "The id of the parent memo (if applicable)", required = true)
+    @Schema(description = "The id of the parent memo (if applicable)", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long parentMemoId;
 
-    @ApiModelProperty(value = "The activity type", required = true)
+    @Schema(description = "The activity type", requiredMode = Schema.RequiredMode.REQUIRED)
     private EventActivityType type;
 
-    @ApiModelProperty(value = "The activity code", required = false)
+    @Schema(description = "The activity code")
     private String code;
 
-    @ApiModelProperty(value = "The date when activity becomes effective", required = false)
+    @Schema(description = "The date when activity becomes effective")
     private Date plannedDate;
 
-    @ApiModelProperty(value = "The date when activity will be re-executed", required = false)
+    @Schema(description = "The date when activity will be re-executed")
     private Date retryDate;
 
-    @ApiModelProperty(value = "The status of the activity (pending or executed)", required = false)
+    @Schema(description = "The status of the activity (pending or executed)")
     private EventActivityStatus status;
 
-    @ApiModelProperty(value = "The status description of the activity (error message)", required = false)
+    @Schema(description = "The status description of the activity (error message)")
     private String statusDescription;
 
     @Builder.Default
-    @ApiModelProperty(value = "The retry no of the activity", required = false)
+    @Schema(description = "The retry no of the activity")
     private int retry = 0;
 
-    @ApiModelProperty(value = "The qualification rule", required = false)
+    @Schema(description = "The qualification rule")
     private String qualifier;
 
-    @ApiModelProperty(value = "The execution rule", required = false)
+    @Schema(description = "The execution rule")
     private String executor;
 
-    @ApiModelProperty(value = "The system memo", required = false)
+    @Schema(description = "The system memo")
     private String systemMemo;
 
-    @ApiModelProperty(value = "The entity name", required = false)
+    @Schema(description = "The entity name")
     private String entityName;
 
-    @ApiModelProperty(value = "The entity id", required = false)
+    @Schema(description = "The entity id")
     private String entityId;
 
-    @ApiModelProperty(value = "The process activity parameters", required = false)
+    @Schema(description = "The process activity parameters")
     private Map<String, Object> parameters;
 
-    @ApiModelProperty(value = "The node processing the activity", required = false)
+    @Schema(description = "The node processing the activity")
     private String executionNode;
 
-    @ApiModelProperty(value = "The node processing the activity", required = false)
+    @Schema(description = "The node processing the activity")
     private EventActivityExecutionType executionType;
 
-    @ApiModelProperty(value = "The process activity context", required = false)
+    @Schema(description = "The process activity context")
     private Map<String, Object> context;
 
-    @ApiModelProperty(value = "The memo context id", required = false)
+    @Schema(description = "The memo context id")
     private String contextId;
 }

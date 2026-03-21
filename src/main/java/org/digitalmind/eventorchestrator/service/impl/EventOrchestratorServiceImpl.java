@@ -42,7 +42,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.beans.Introspector;
 import java.util.*;
 import java.util.concurrent.*;
@@ -859,7 +859,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
     @Override
     public Object getEntity(String name, Object id) {
         String entityId = (id != null) ? String.valueOf(id) : null;
-        return eventOrchestratorPluginRegistry.getPluginFor(name).getEntity(name, entityId);
+        return eventOrchestratorPluginRegistry.getPluginFor(name).map(p -> p.getEntity(name, entityId)).orElse(null);
     }
 
     private String unproxyClassName(String className) {
@@ -878,17 +878,8 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         if (name == null) {
             return null;
         }
-        name = unproxyClassName(name);
-        Object pluginFor = eventOrchestratorPluginRegistry.getPluginFor(name);
-        if (pluginFor != null) {
-            if (pluginFor instanceof EventOrchestratorEntityPlugin) {
-                return ((EventOrchestratorEntityPlugin) pluginFor).getEntityAlias(name);
-            }
-            if (pluginFor instanceof Optional && (((Optional) pluginFor).get() != null)) {
-                return ((EventOrchestratorEntityPlugin) ((Optional) pluginFor).get()).getEntityAlias(name);
-            }
-        }
-        return null;
+        final String entityName = unproxyClassName(name);
+        return eventOrchestratorPluginRegistry.getPluginFor(entityName).map(p -> p.getEntityAlias(entityName)).orElse(null);
     }
 
     @Override

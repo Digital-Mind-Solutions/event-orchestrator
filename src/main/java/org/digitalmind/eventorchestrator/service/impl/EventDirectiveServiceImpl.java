@@ -151,7 +151,7 @@ public class EventDirectiveServiceImpl implements EventDirectiveService, Runnabl
         executorService.scheduleAtFixedRate(this, 1, 1, TimeUnit.MINUTES);
     }
 
-    private RequestContext getRequestContext(AbstractEvent event, EvaluationContext context) {
+    private RequestContext getRequestContext(Object event, EvaluationContext context) {
         //if the entity has context_id attribute reuse the context with that id else create a new one
         RequestContext requestContext = null;
         try {
@@ -173,7 +173,7 @@ public class EventDirectiveServiceImpl implements EventDirectiveService, Runnabl
         return requestContext;
     }
 
-    private void applyDirectives(ConfigurationDirectiveKey key, AbstractEvent event) {
+    private void applyDirectives(ConfigurationDirectiveKey key, Object event) {
         if (this.exceptionList.contains(key.getEntityName())) {
             return;
         }

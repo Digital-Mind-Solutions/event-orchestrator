@@ -9,8 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.persistence.EntityManagerFactory;
+import jakarta.annotation.PostConstruct;
+import jakarta.persistence.EntityManagerFactory;
 
 @Component
 public class EventDirectiveListener implements
@@ -106,11 +106,6 @@ public class EventDirectiveListener implements
     @Override
     public boolean onPreUpdate(PreUpdateEvent event) {
         return eventDirectiveService.onPreUpdate(event);
-    }
-
-    @Override
-    public boolean requiresPostCommitHanding(EntityPersister persister) {
-        return false;
     }
 
     @Override

@@ -1,8 +1,7 @@
 package org.digitalmind.eventorchestrator.entity;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.IdModel;
@@ -12,7 +11,7 @@ import org.digitalmind.eventorchestrator.enumeration.EventActivityType;
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -28,7 +27,7 @@ import static org.digitalmind.eventorchestrator.entity.TemplateActivity.TABLE_NA
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 
-@ApiModel(value = "TemplateActivity", description = "Activity templates defined in the signing process.")
+@Schema(description = "Activity templates defined in the signing process.")
 @JsonPropertyOrder(
         {
                 "id", "type", "code", "statusExpr", "subStatusExpr",
@@ -43,44 +42,44 @@ public class TemplateActivity extends ContextVersionableAuditModel implements Id
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
-    @ApiModelProperty(value = "Unique id of the template", required = false)
+    @Schema(description = "Unique id of the template")
     private Long id;
 
-    @ApiModelProperty(value = "The activity type", required = true)
+    @Schema(description = "The activity type", requiredMode = Schema.RequiredMode.REQUIRED)
     @Column(name = "type", length = 50)
     @Enumerated(EnumType.STRING)
     private EventActivityType type;
 
-    @ApiModelProperty(value = "The activity execution type", required = true)
+    @Schema(description = "The activity execution type", requiredMode = Schema.RequiredMode.REQUIRED)
     @Column(name = "execution_type", length = 50)
     @Enumerated(EnumType.STRING)
     private EventActivityExecutionType executionType;
 
-    @ApiModelProperty(value = "The activity code", required = false)
+    @Schema(description = "The activity code")
     @Column(name = "code")
     private String code;
 
-    @ApiModelProperty(value = "The qualifier SPEL that must evaluate to boolean", required = false)
+    @Schema(description = "The qualifier SPEL that must evaluate to boolean")
     @Column(name = "qualifier_expr2", length = 3000)
     private String qualifierExpr2;
 
-    @ApiModelProperty(value = "The executor HANDLEBARS that must give the activity parameters", required = false)
+    @Schema(description = "The executor HANDLEBARS that must give the activity parameters")
     @Column(name = "executor_expr2", length = 3000)
     private String executorExpr2;
 
-    @ApiModelProperty(value = "The sub status SPEL", required = false)
+    @Schema(description = "The sub status SPEL")
     @Column(name = "system_memo_expr2", length = 1000)
     private String systemMemoExpr2;
 
-    @ApiModelProperty(value = "The entity name SPEL", required = false)
+    @Schema(description = "The entity name SPEL")
     @Column(name = "entity_name_expr", length = 1000)
     private String entityNameExpr;
 
-    @ApiModelProperty(value = "The entity id SPEL", required = false)
+    @Schema(description = "The entity id SPEL")
     @Column(name = "entity_id_expr", length = 1000)
     private String entityIdExpr;
 
-    @ApiModelProperty(value = "The process activity parameters SPEL", required = false)
+    @Schema(description = "The process activity parameters SPEL")
     @Column(name = "parameters_expr", length = 3000)
     private String parametersExpr;
 
@@ -88,25 +87,25 @@ public class TemplateActivity extends ContextVersionableAuditModel implements Id
     @Singular
     private List<TemplateActivityActivator> templateActivityActivators = new LinkedList<>();
 
-    @ApiModelProperty(value = "The memo success visibility", required = false)
+    @Schema(description = "The memo success visibility")
     @Column(name = "visibility_success")
     @Enumerated(EnumType.ORDINAL)
     private EventVisibility visibilitySuccess;
 
-    @ApiModelProperty(value = "The memo default visibility", required = false)
+    @Schema(description = "The memo default visibility")
     @Column(name = "visibility_default")
     @Enumerated(EnumType.ORDINAL)
     private EventVisibility visibilityDefault;
 
-    @ApiModelProperty(value = "The privacy id SPEL", required = false)
+    @Schema(description = "The privacy id SPEL")
     @Column(name = "privacy_id_expr", length = 1000)
     private String privacyIdExpr;
 
-    @ApiModelProperty(value = "The priority id SPEL (lower is more important)", required = false)
+    @Schema(description = "The priority id SPEL (lower is more important)")
     @Column(name = "priority_expr", length = 1000)
     private String priorityExpr;
 
-    @ApiModelProperty(value = "The event activity execution type", required = false)
+    @Schema(description = "The event activity execution type")
     @Column(name = "execution_mode", length = 50)
     @Enumerated(EnumType.STRING)
     private EventActivityExecutionMode executionMode;

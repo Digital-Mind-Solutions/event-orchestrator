@@ -47,7 +47,7 @@ public class EventOrchestratorModuleConfig {
 
     @Bean(EVENT_ORCHESTRATOR_PLUGIN_REGISTRY)
     public PluginRegistry<EventOrchestratorEntityPlugin, String> eventOrchestratorPluginRegistry(List<? extends EventOrchestratorEntityPlugin> eventOrchestratorPlugins) {
-        PluginRegistry<EventOrchestratorEntityPlugin, String> pluginRegistry = OrderAwarePluginRegistry.create(eventOrchestratorPlugins);
+        PluginRegistry<EventOrchestratorEntityPlugin, String> pluginRegistry = PluginRegistry.of(eventOrchestratorPlugins);
         return pluginRegistry;
     }
 }
