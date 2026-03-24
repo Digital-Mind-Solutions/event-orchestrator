@@ -356,13 +356,13 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             return t;
         });
         int size = this.config.getThreadPoolExecutor().getOrphan().getSchedulerCapacityThreshold();
-        this.scheduler[heartbeatIndex].scheduleAtFixedRate(() -> {
-                    log.trace("Start scheduler [{}] orphan monitor", heartbeatIndex);
+        this.scheduler[orphanIndex].scheduleAtFixedRate(() -> {
+                    log.trace("Start scheduler [{}] orphan monitor", orphanIndex);
                     try {
                         eventActivityService.requeueOrphans(size);
-                        log.trace("End scheduler [{}] orphan monitor", heartbeatIndex);
+                        log.trace("End scheduler [{}] orphan monitor", orphanIndex);
                     } catch (Exception e) {
-                        log.error("Error scheduler [{}] orphan monitor. {}", heartbeatIndex, Throwables.getStackTraceAsString(e), e);
+                        log.error("Error scheduler [{}] orphan monitor. {}", orphanIndex, Throwables.getStackTraceAsString(e), e);
                     }
 
                 },

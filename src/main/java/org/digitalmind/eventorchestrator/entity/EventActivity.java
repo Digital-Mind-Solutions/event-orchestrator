@@ -11,6 +11,8 @@ import org.digitalmind.eventorchestrator.enumeration.EventActivityExecutionType;
 import org.digitalmind.eventorchestrator.enumeration.EventActivityStatus;
 import org.digitalmind.eventorchestrator.enumeration.EventActivityType;
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.*;
@@ -89,8 +91,8 @@ public class EventActivity extends ContextVersionableAuditModel implements IdMod
     private String code;
 
     @Schema(description = "The date when activity becomes effective")
+    @JdbcTypeCode(SqlTypes.TIMESTAMP)
     @Column(name = "planned_date")
-    @Temporal(TemporalType.TIMESTAMP)
     private Date plannedDate;
 
     @Schema(description = "The status of the activity (pending or executed)")
@@ -103,8 +105,8 @@ public class EventActivity extends ContextVersionableAuditModel implements IdMod
     private String statusDescription;
 
     @Schema(description = "The date when activity becomes effective for retry")
+    @JdbcTypeCode(SqlTypes.TIMESTAMP)
     @Column(name = "retry_date")
-    @Temporal(TemporalType.TIMESTAMP)
     private Date retryDate;
 
     @Schema(description = "The retry no of the activity")
@@ -133,10 +135,10 @@ public class EventActivity extends ContextVersionableAuditModel implements IdMod
     private String entityId;
 
     @Schema(description = "The process activity parameters")
-    @Column(name = "parameters")
+    @JdbcTypeCode(SqlTypes.CLOB)
+    @Column(name = "parameters", columnDefinition = "LONGTEXT")
     @Singular
     @Convert(converter = JpaMapJsonConverter.class)
-    @Lob
     private Map<String, Object> parameters;
 
     @Schema(description = "The node processing the activity")
@@ -150,10 +152,10 @@ public class EventActivity extends ContextVersionableAuditModel implements IdMod
     private EventActivityExecutionType executionType = EventActivityExecutionType.SERIAL_ENTITY;
 
     @Schema(description = "The process activity context")
-    @Column(name = "context")
+    @JdbcTypeCode(SqlTypes.CLOB)
+    @Column(name = "context", columnDefinition = "LONGTEXT")
     @Singular("context")
     @Convert(converter = JpaMapJsonConverter.class)
-    @Lob
     private Map<String, Object> context;
 
     @Schema(description = "The activity visibility")

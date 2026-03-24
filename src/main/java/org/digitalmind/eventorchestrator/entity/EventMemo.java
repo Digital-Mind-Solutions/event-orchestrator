@@ -10,6 +10,8 @@ import org.digitalmind.eventorchestrator.converter.JpaMapJsonConverter;
 import org.digitalmind.eventorchestrator.enumeration.EventActivityType;
 import org.digitalmind.eventorchestrator.enumeration.EventMemoStatus;
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.*;
@@ -101,16 +103,16 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     private String entityId;
 
     @Schema(description = "The process memo parameters")
-    @Column(name = "parameters")
+    @JdbcTypeCode(SqlTypes.CLOB)
+    @Column(name = "parameters", columnDefinition = "LONGTEXT")
     @Singular
     @Convert(converter = JpaMapJsonConverter.class)
-    @Lob
     private Map<String, Object> parameters;
 
     @Schema(description = "The memo context")
-    @Column(name = "context")
+    @JdbcTypeCode(SqlTypes.CLOB)
+    @Column(name = "context", columnDefinition = "LONGTEXT")
     @Convert(converter = JpaMapJsonConverter.class)
-    @Lob
     private Map<String, Object> context;
 
     @Schema(description = "The memo visibility")

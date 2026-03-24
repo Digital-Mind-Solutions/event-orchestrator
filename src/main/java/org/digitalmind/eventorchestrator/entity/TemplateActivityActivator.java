@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.IdModel;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.*;
@@ -83,11 +85,13 @@ public class TemplateActivityActivator extends ContextVersionableAuditModel impl
     private String usecase;
 
     @Schema(description = "The date expression when the activity is supposed to be executed")
-    @Column(name = "planned_date_expr")
+    @JdbcTypeCode(SqlTypes.CLOB)
+    @Column(name = "planned_date_expr", columnDefinition = "LONGTEXT")
     private String plannedDateExpr;
 
     @Schema(description = "The qualifier SPEL that must evaluate to boolean")
-    @Column(name = "qualifier_expr")
+    @JdbcTypeCode(SqlTypes.CLOB)
+    @Column(name = "qualifier_expr", columnDefinition = "LONGTEXT")
     private String qualifierExpr;
 
     @JsonInclude(JsonInclude.Include.ALWAYS)
