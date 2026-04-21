@@ -1,6 +1,7 @@
 package org.digitalmind.eventorchestrator.plugin.impl;
 
 import org.digitalmind.eventorchestrator.entity.*;
+import org.digitalmind.eventorchestrator.entity.MemoId;
 import org.digitalmind.eventorchestrator.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -71,7 +72,17 @@ public class EventOrchestratorInternalEntityPlugin extends EventOrchestratorAbst
     public Object getEntityInternal(String name, String id) {
 
         if (EventMemo.class.getCanonicalName().equals(name) || EventMemo.class.getSimpleName().equals(name)) {
-            return eventMemoRepository.findById(Long.valueOf(id)).orElse(null);
+            int sep = id.indexOf(':');
+            if (sep < 1 || sep == id.length() - 1) {
+                return null;
+            }
+            try {
+                int partitionKey = Integer.parseInt(id.substring(0, sep));
+                long memoId = Long.parseLong(id.substring(sep + 1));
+                return eventMemoRepository.findById(MemoId.of(partitionKey, memoId)).orElse(null);
+            } catch (NumberFormatException e) {
+                return null;
+            }
         }
 
         if (EventActivity.class.getCanonicalName().equals(name) || EventActivity.class.getSimpleName().equals(name)) {

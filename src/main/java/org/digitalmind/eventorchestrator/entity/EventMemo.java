@@ -2,10 +2,11 @@ package org.digitalmind.eventorchestrator.entity;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AccessLevel;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
-import org.digitalmind.buildingblocks.core.jpautils.entity.IdModel;
+import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdModel;
 import org.digitalmind.eventorchestrator.converter.JpaMapJsonConverter;
 import org.digitalmind.eventorchestrator.enumeration.EventActivityType;
 import org.digitalmind.eventorchestrator.enumeration.EventMemoStatus;
@@ -26,6 +27,11 @@ import static org.digitalmind.eventorchestrator.entity.EventMemo.TABLE_NAME;
                         name = TABLE_NAME + "_ix1",
                         columnList = "context_id",
                         unique = false
+                ),
+                @Index(
+                        name = TABLE_NAME + "_ix_partition_process",
+                        columnList = "partition_key, process_id",
+                        unique = false
                 )
         }
 )
@@ -45,15 +51,39 @@ import static org.digitalmind.eventorchestrator.entity.EventMemo.TABLE_NAME;
 )
 @Schema(description = "Process memo")
 @ToString(callSuper = true)
-public class EventMemo extends ContextVersionableAuditModel implements ProcessAuditModel, IdModel<Long> {
+public class EventMemo extends ContextVersionableAuditModel implements ProcessAuditModel, PartitionedIdModel<Integer, Long> {
 
     public static final String TABLE_NAME = "process_memo";
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EmbeddedId
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private MemoId pk;
+
+    @Schema(description = "P1 partition key")
+    public Integer getPartitionKey() {
+        return pk != null ? pk.getPartitionKey() : null;
+    }
+
+    public void setPartitionKey(Integer partitionKey) {
+        if (pk == null) {
+            pk = new MemoId();
+        }
+        pk.setPartitionKey(partitionKey);
+    }
+
     @Schema(description = "Unique id of the process activity")
-    @Column(name = "id")
-    private Long id;
+    @Override
+    public Long getId() {
+        return pk != null ? pk.getId() : null;
+    }
+
+    public void setId(Long id) {
+        if (pk == null) {
+            pk = new MemoId();
+        }
+        pk.setId(id);
+    }
 
     @Schema(description = "The name of the process")
     @Column(name = "process_name", length = 500)
