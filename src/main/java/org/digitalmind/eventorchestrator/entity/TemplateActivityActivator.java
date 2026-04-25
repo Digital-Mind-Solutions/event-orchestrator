@@ -3,8 +3,8 @@ package org.digitalmind.eventorchestrator.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.*;
 import lombok.*;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.IdModel;
@@ -12,16 +12,23 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import jakarta.persistence.*;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import static org.digitalmind.eventorchestrator.entity.TemplateActivityActivator.TABLE_NAME;
+import static org.digitalmind.eventorchestrator.entity.TemplateActivityActivator.*;
 
 
 @Entity
-@Table(name = TABLE_NAME)
 @EntityListeners({AuditingEntityListener.class})
+@Table(
+        name = TABLE_NAME,
+        indexes = {
+                @Index(name = TABLE_IX_CREATED_AT, columnList = "created_at", unique = false),
+                @Index(name = TABLE_IX_UPDATED_AT, columnList = "updated_at", unique = false),
+                @Index(name = TABLE_SHORT_NAME + "_ix01", columnList = "template_id", unique = false),
+                @Index(name = TABLE_SHORT_NAME + "_ix02", columnList = "parent_code, parent_status, priority, id", unique = false),
+        }
+)
 
 @Data
 @NoArgsConstructor
@@ -40,6 +47,9 @@ import static org.digitalmind.eventorchestrator.entity.TemplateActivityActivator
 public class TemplateActivityActivator extends ContextVersionableAuditModel implements IdModel<Long> {
 
     public static final String TABLE_NAME = "template_activator";
+    static final String TABLE_SHORT_NAME = "template_actvr";
+    static final String TABLE_IX_CREATED_AT = TABLE_SHORT_NAME + "_ixcreat";
+    static final String TABLE_IX_UPDATED_AT = TABLE_SHORT_NAME + "_ixupdat";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

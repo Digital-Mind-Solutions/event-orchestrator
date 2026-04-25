@@ -2,6 +2,7 @@ package org.digitalmind.eventorchestrator.entity;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.*;
 import lombok.*;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.IdModel;
@@ -11,14 +12,21 @@ import org.digitalmind.eventorchestrator.enumeration.EventActivityType;
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import jakarta.persistence.*;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.digitalmind.eventorchestrator.entity.TemplateActivity.TABLE_NAME;
+import static org.digitalmind.eventorchestrator.entity.TemplateActivity.*;
 
 @Entity
-@Table(name = TABLE_NAME)
+@Table(
+        name = TABLE_NAME,
+        indexes = {
+                @Index(name = TABLE_IX_CREATED_AT, columnList = "created_at", unique = false),
+                @Index(name = TABLE_IX_UPDATED_AT, columnList = "updated_at", unique = false),
+                @Index(name = TABLE_SHORT_NAME + "_ck01", columnList = "code", unique = true)
+        }
+)
+
 @EntityListeners({AuditingEntityListener.class})
 
 @Data
@@ -38,6 +46,9 @@ import static org.digitalmind.eventorchestrator.entity.TemplateActivity.TABLE_NA
 public class TemplateActivity extends ContextVersionableAuditModel implements IdModel<Long> {
 
     public static final String TABLE_NAME = "template_activity";
+    static final String TABLE_SHORT_NAME = "template_acty";
+    static final String TABLE_IX_CREATED_AT = TABLE_SHORT_NAME + "_ixcreat";
+    static final String TABLE_IX_UPDATED_AT = TABLE_SHORT_NAME + "_ixupdat";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -18,6 +18,7 @@ import java.util.Date;
 public class EventActivityResult extends ContextVersionableAuditModel implements IdModel<Long> {
 
     private Long id;
+    private Integer processPartitionKey;
     private Long processId;
     private String code;
     private Date plannedDate;

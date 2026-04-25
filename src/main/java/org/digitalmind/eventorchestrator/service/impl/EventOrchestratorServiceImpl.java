@@ -5,6 +5,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheBuilderSpec;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,6 +13,7 @@ import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
 import org.digitalmind.buildingblocks.core.beanutils.service.SpringBeanUtil;
+import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdModel;
 import org.digitalmind.buildingblocks.core.requestcontext.dto.RequestContext;
 import org.digitalmind.buildingblocks.core.requestcontext.service.RequestContextService;
 import org.digitalmind.buildingblocks.core.spel.service.SpelService;
@@ -42,7 +44,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.annotation.PostConstruct;
 import java.beans.Introspector;
 import java.util.*;
 import java.util.concurrent.*;
@@ -474,17 +475,17 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         return eventActivityService.save(eventActivityRequest);
     }
 
-    public void triggerEventActivities(RequestContext requestContext, Long processId, String processName, Long parentMemoId, String code, String status, Object trigger) {
+    public void triggerEventActivities(RequestContext requestContext, Integer processPartitionKey, Long processId, String processName, Long parentMemoId, String code, String status, Object trigger) {
         requestContext = getOrDefault(requestContext);
         processName = getEntityAlias(processName);
         if (trigger != null && trigger instanceof Collection) {
             RequestContext finalRequestContext = requestContext;
             String finalCode = code;
             String finalProcessName = processName;
-            ((Collection) trigger).forEach(triggerItem -> triggerEventActivities(finalRequestContext, processId, finalProcessName, parentMemoId, finalCode, status, triggerItem));
+            ((Collection) trigger).forEach(triggerItem -> triggerEventActivities(finalRequestContext, processPartitionKey, processId, finalProcessName, parentMemoId, finalCode, status, triggerItem));
             return;
         }
-        log.info("triggerEventActivities requestContext={}, processId={}, processName={}, parentMemoId={}, code={}, status={}, trigger={}", requestContext, processId, processName, parentMemoId, code, status, trigger.getClass().getSimpleName());
+        log.info("triggerEventActivities requestContext={}, processPartitionKey={}, processId={}, processName={}, parentMemoId={}, code={}, status={}, trigger={}", requestContext, processPartitionKey, processId, processName, parentMemoId, code, status, trigger.getClass().getSimpleName());
         List<EventActivity> asyncEventActivityList = new ArrayList<EventActivity>();
         List<EventActivity> syncEventActivityList = new ArrayList<EventActivity>();
         ConcurrentHashMap<String, Object> taaContextMap = new ConcurrentHashMap<>();
@@ -558,6 +559,9 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             String triggerBeanName = Introspector.decapitalize(trigger.getClass().getSimpleName());
             taaContextMap.put(triggerBeanName, trigger);
             taaContextMap.put("trigger", trigger);
+        }
+        if (processPartitionKey != null) {
+            taaContextMap.put("processPartitionKey", processPartitionKey);
         }
         if (processId != null) {
             taaContextMap.put("processId", processId);
@@ -658,6 +662,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                     }
                     EventActivity.EventActivityBuilder processActivityBuilder = EventActivity.builder()
                             .contextId(requestContext.getId())
+                            .processPartitionKey((process != null) ? process.getPartitionKey() : null)
                             .processId((process != null) ? process.getId() : null)
                             .processName((process != null) ? getEntityAlias(process) : null)
                             .parentMemoId(parentMemoId)
@@ -704,7 +709,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
     @Override
     @Transactional
     public EventMemo executeEventActivity(RequestContext requestContext, EventActivity eventActivity, EventActivityExecutionMode executionMode) {
-        log.info("start execute EventActivity id={}, code={}, processId={}, executionMode={}, requestContext={}", eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessId(), executionMode, requestContext.getId());
+        log.info("start execute EventActivity id={}, code={}, processPartitionKey={}, processId={}, executionMode={}, requestContext={}", eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessPartitionKey(), eventActivity.getProcessId(), executionMode, requestContext.getId());
         EventMemo eventMemoResult = null;
         EventMemo.EventMemoBuilder processMemoBuilder = EventMemo.builder();
         EventOrchestratorProcess process = null;
@@ -712,6 +717,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             requestContext = getOrDefault(requestContext);
 
             processMemoBuilder
+                    .key(EventMemoId.of(eventActivity.getProcessPartitionKey(), null))
                     .parentId(eventActivity.getParentMemoId())
                     .processName(eventActivity.getProcessName())
                     .processId(eventActivity.getProcessId())
@@ -726,8 +732,8 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                     .context(eventActivity.getContext())
                     .contextId(eventActivity.getContextId())
             ;
-
-            process = (EventOrchestratorProcess) getEntity(eventActivity.getProcessName(), eventActivity.getProcessId());
+            String processIdentifier = PartitionedIdModel.calcIdentifier(eventActivity.getProcessPartitionKey(), eventActivity.getProcessId());
+            process = (EventOrchestratorProcess) getEntity(eventActivity.getProcessName(), processIdentifier);
 
             ConcurrentHashMap<String, Object> paContextMap = new ConcurrentHashMap<>();
             if (requestContext != null) {
@@ -770,8 +776,18 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                 } catch (EventOrchestratorException e) {
                     throw e;
                 } catch (ExecutionException | RuntimeException e) {
-                    log.error("Unable to get executor expr for ProcessActivity with id " + eventActivity.getId() + " and process with id " + ((process != null) ? String.valueOf(process.getId()) : "null"), e);
-                    throw new EventOrchestratorFatalException("Unable to get executor expr for ProcessActivity with id " + eventActivity.getId() + " and process with id " + ((process != null) ? String.valueOf(process.getId()) : "null"), e);
+                    log.error(
+                            "Unable to get executor expr for ProcessActivity with id " + eventActivity.getId() +
+                                    " and process with partition key " + ((process != null) ? String.valueOf(process.getPartitionKey()) : "null") +
+                                    " and id " + ((process != null) ? String.valueOf(process.getId()) : "null"),
+                            e
+                    );
+                    throw new EventOrchestratorFatalException(
+                            "Unable to get executor expr for ProcessActivity with id " + eventActivity.getId() +
+                                    " and process with partition key " + ((process != null) ? String.valueOf(process.getPartitionKey()) : "null") +
+                                    " and id " + ((process != null) ? String.valueOf(process.getId()) : "null"),
+                            e
+                    );
                 }
                 processMemoBuilder.status(EventMemoStatus.SUCCESS);
                 processMemoBuilder.visibility(eventActivity.getVisibilitySuccess());
@@ -781,11 +797,16 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             if (EventActivityExecutionMode.ASYNC.equals(executionMode)) {
                 eventActivityService.deleteById(eventActivity.getId());
             }
-            log.info("executed EventActivity id={}, code={}, processId={}, executionMode={}, requestContext={}", eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessId(), executionMode, requestContext.getId());
+            log.info(
+                    "executed EventActivity id={}, code={}, processpartitionKey={}, processId={}, executionMode={}, requestContext={}",
+                    eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessPartitionKey(), eventActivity.getProcessId(), executionMode, requestContext.getId()
+            );
         } catch (Exception e) {
             ExceptionType exceptionType = EventOrchestratorExceptionUtils.getExceptionType(e);
             Throwable exceptionCause = EventOrchestratorExceptionUtils.getExceptionCause(e);
-            log.error("unable to execute EventActivity id={}, code={}, processId={}, executionMode={}, requestContext={}, exceptionType={}, error={}, cause={}", eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessId(), executionMode, requestContext.getId(), exceptionType.name(), e.getMessage(), exceptionCause.getMessage());
+            log.error(
+                    "unable to execute EventActivity id={}, processpartitionKey={}, code={}, processId={}, executionMode={}, requestContext={}, exceptionType={}, error={}, cause={}",
+                    eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessPartitionKey(), eventActivity.getProcessId(), executionMode, requestContext.getId(), exceptionType.name(), e.getMessage(), exceptionCause.getMessage());
             String statusDescription = "";
             statusDescription = statusDescription + e.getLocalizedMessage();
             statusDescription = statusDescription + "; " + exceptionCause.getMessage();

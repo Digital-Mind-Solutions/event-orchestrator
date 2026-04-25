@@ -2,6 +2,7 @@ package org.digitalmind.eventorchestrator.entity;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
@@ -15,36 +16,113 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import jakarta.persistence.*;
 import java.util.Date;
 import java.util.Map;
 
-import static org.digitalmind.eventorchestrator.entity.EventActivity.TABLE_NAME;
+import static org.digitalmind.eventorchestrator.entity.EventActivity.*;
 
 @Entity
 @Table(name = TABLE_NAME,
         indexes = {
+                // audit / debug / eventual purge / reporting
                 @Index(
-                        name = TABLE_NAME + "_ix1",
-                        columnList = "planned_date,status,execution_node,retry_date",
-                        unique = false
+                        name = TABLE_IX_CREATED_AT,
+                        columnList = "created_at"
                 ),
+
+                // audit / debug / incremental scans
                 @Index(
-                        name = TABLE_NAME + "_ix2",
-                        columnList = "process_id,entity_id,type",
-                        unique = false
+                        name = TABLE_IX_UPDATED_AT,
+                        columnList = "updated_at"
+                ),
+
+                // POLL PARALLEL
+                // folosit de: findAllWithExecutionTypeParallel
+                // filtre: execution_type, status
+                // range: planned_date, retry_date
+                // order: priority, planned_date, retry_date, id
+                // scop: index range scan ordonat + LIMIT early stop + lock minim
+                @Index(
+                        name = TABLE_IX_POLL_PARALLEL,
+                        columnList = "execution_type,status,priority,planned_date,retry_date,id"
+                ),
+
+                // POLL SERIAL (OUTER)
+                // folosit de:
+                // - findAllWithExecutionTypeSerialProcess (outer)
+                // - findAllWithExecutionTypeSerialEntity (outer)
+                // filtre: execution_type, status
+                // order: priority, retry_date, id
+                // NOTĂ: planned_date este filtru suplimentar aplicat după scan-ul ordonat;
+                // nu îl punem în index pentru că ar rupe ordinea necesară pentru ORDER BY priority,retry_date,id
+                @Index(
+                        name = TABLE_IX_POLL_SERIAL,
+                        columnList = "execution_type,status,priority,retry_date,id"
+                ),
+
+                // SERIAL_PROCESS SUBQUERY
+                // folosit de: subquery din findAllWithExecutionTypeSerialProcess
+                // condiții:
+                //   process_id = ?
+                //   execution_type = ?
+                //   planned_date < ?
+                // scop:
+                //   - process_id first (cheia de serializare → selectivitate mare)
+                //   - index seek rapid per row
+                //   - elimină nested scan costisitor
+                @Index(
+                        name = TABLE_IX_SERIAL_PROCESS,
+                        columnList = "process_id,execution_type,planned_date,id"
+                ),
+
+                // SERIAL_ENTITY SUBQUERY
+                // folosit de: subquery din findAllWithExecutionTypeSerialEntity
+                // condiții:
+                //   process_id = ?
+                //   entity_id = ?
+                //   entity_name = ?
+                //   planned_date < ?
+                // scop:
+                //   - cheia completă de serializare
+                //   - index seek rapid
+                //   - evită scan mare în NOT EXISTS
+                @Index(
+                        name = TABLE_IX_SERIAL_ENTITY,
+                        columnList = "process_id,entity_id,entity_name,execution_type,planned_date,id"
+                ),
+
+                // ORPHAN QUEUED
+                // folosit de: findOrphanQueuedEntity
+                // filtre: status
+                // join logic: execution_node (cu heartbeat)
+                // order: priority, planned_date, retry_date, id
+                // scop: scan mic + fără filesort
+                @Index(
+                        name = TABLE_IX_ORPHAN_QUEUED,
+                        columnList = "status,execution_node,priority,planned_date,retry_date,id"
+                ),
+
+                // PROCESS VISIBLE PAGE
+                // folosit de: findAllByProcessIdAndVisibleAndPrivacyId
+                // filtre: process_id, visibility, privacy_id
+                // order: retry_date
+                // scop: paging eficient fără filesort
+                @Index(
+                        name = TABLE_IX_PROCESS_VISIBLE,
+                        columnList = "process_id,visibility,privacy_id,retry_date,planned_date,id"
                 )
         }
 
 )
+
 @EntityListeners({AuditingEntityListener.class})
 
 @SuperBuilder
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = false)
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @JsonPropertyOrder(
         {
                 "id", "processId", "parentMemoId", "type",
@@ -61,6 +139,18 @@ import static org.digitalmind.eventorchestrator.entity.EventActivity.TABLE_NAME;
 public class EventActivity extends ContextVersionableAuditModel implements IdModel<Long> {
 
     public static final String TABLE_NAME = "process_activity";
+    static final String TABLE_SHORT_NAME = "pr_actv";
+    static final String TABLE_IX_CREATED_AT = TABLE_SHORT_NAME + "_ixcreat";
+    static final String TABLE_IX_UPDATED_AT = TABLE_SHORT_NAME + "_ixupdat";
+
+    static final String TABLE_IX_POLL_PARALLEL = TABLE_SHORT_NAME + "_ixpollprl";
+    static final String TABLE_IX_POLL_SERIAL = TABLE_SHORT_NAME + "_ixpollser";
+
+    static final String TABLE_IX_SERIAL_PROCESS = TABLE_SHORT_NAME + "_ixserprc";
+    static final String TABLE_IX_SERIAL_ENTITY = TABLE_SHORT_NAME + "_ixserent";
+
+    static final String TABLE_IX_ORPHAN_QUEUED = TABLE_SHORT_NAME + "_ixorphan";
+    static final String TABLE_IX_PROCESS_VISIBLE = TABLE_SHORT_NAME + "_ixprcvis";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -71,6 +161,11 @@ public class EventActivity extends ContextVersionableAuditModel implements IdMod
     @Schema(description = "The name of the process")
     @Column(name = "process_name")
     private String processName;
+
+    @Column(name = "process_partition_key")
+    //@NonNull
+    @Schema(description = "The key of the process partition")
+    private Integer processPartitionKey;
 
     @Column(name = "process_id")
     //@NonNull
@@ -176,5 +271,28 @@ public class EventActivity extends ContextVersionableAuditModel implements IdMod
     @Column(name = "priority")
     @Builder.Default
     private Integer priority = 5000;
+
+
+    public void setRetryDate(Date retryDate) {
+        this.retryDate = (retryDate != null)
+                ? retryDate
+                : this.plannedDate;
+    }
+
+    public void setPlannedDate(Date plannedDate) {
+        this.plannedDate = plannedDate;
+
+        if (this.retryDate == null) {
+            this.retryDate = plannedDate;
+        }
+    }
+
+    @PrePersist
+    public void onPrePersist() {
+        if (this.retryDate == null) {
+            this.retryDate = this.plannedDate;
+        }
+    }
+
 }
 

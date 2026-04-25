@@ -27,8 +27,9 @@ public interface EventActivityRepository extends JpaRepository<EventActivity, Lo
                     " org.digitalmind.eventorchestrator.enumeration.EventActivityStatus.PENDING_RETRY " +
                     ") " +
                     "  AND P.plannedDate < :plannedDate " +
-                    "  AND (P.retryDate IS NULL OR P.retryDate < :retryDate) " +
-                    "ORDER BY P.priority, P.plannedDate, P.retryDate NULLS FIRST, P.id"
+                    //"  AND (P.retryDate IS NULL OR P.retryDate < :retryDate) " +
+                    "  AND P.retryDate < :retryDate " +
+                    "ORDER BY P.priority, P.plannedDate, P.retryDate, P.id"
     )
         //PARALLEL              //NO DEPENDENCY ON EXECUTION
     List<EventActivity> findAllWithExecutionTypeParallel(@Param("plannedDate") Date plannedDate, @Param("retryDate") Date retryDate, Pageable pageable);
@@ -42,7 +43,8 @@ public interface EventActivityRepository extends JpaRepository<EventActivity, Lo
                     "       org.digitalmind.eventorchestrator.enumeration.EventActivityStatus.PENDING_RETRY " +
                     "  ) " +
                     "  AND P.plannedDate < :plannedDate " +
-                    "  AND (P.retryDate IS NULL OR P.retryDate < :retryDate) " +
+                    //"  AND (P.retryDate IS NULL OR P.retryDate < :retryDate) " +
+                    "  AND P.retryDate < :retryDate " +
                     "  AND NOT EXISTS(" +
                     " " +
                     "           SELECT C FROM EventActivity C " +
@@ -50,7 +52,7 @@ public interface EventActivityRepository extends JpaRepository<EventActivity, Lo
                     "             AND (C.plannedDate < P.plannedDate OR (C.plannedDate = P.plannedDate AND C.id < P.id))" +
                     "             AND C.processId = P.processId " +
                     ") " +
-                    "ORDER BY P.priority, P.retryDate NULLS FIRST, P.id"
+                    "ORDER BY P.priority, P.retryDate, P.id"
     )
         //SERIAL_PROCESS        //SERIALIZE PA WITH THE SAME PROCESS ID
     List<EventActivity> findAllWithExecutionTypeSerialProcess(@Param("plannedDate") Date plannedDate, @Param("retryDate") Date retryDate, Pageable pageable);
@@ -65,7 +67,8 @@ public interface EventActivityRepository extends JpaRepository<EventActivity, Lo
                     "       org.digitalmind.eventorchestrator.enumeration.EventActivityStatus.PENDING_RETRY " +
                     "  ) " +
                     "  AND P.plannedDate < :plannedDate " +
-                    "  AND (P.retryDate IS NULL OR P.retryDate < :retryDate) " +
+                    //"  AND (P.retryDate IS NULL OR P.retryDate < :retryDate) " +
+                    "  AND P.retryDate < :retryDate " +
                     "  AND NOT EXISTS(" +
                     " " +
                     "           SELECT C FROM EventActivity C " +
@@ -75,7 +78,7 @@ public interface EventActivityRepository extends JpaRepository<EventActivity, Lo
                     "             AND C.entityId = P.entityId " +
                     "             AND C.entityName = P.entityName " +
                     ") " +
-                    "ORDER BY P.priority, P.retryDate NULLS FIRST, P.id"
+                    "ORDER BY P.priority, P.retryDate, P.id"
     )
         //SERIAL_ENTITY,        //SERIALIZE PA WITH THE SAME PROCESS ID, ENTITY ID AND ENTITY NAME
     List<EventActivity> findAllWithExecutionTypeSerialEntity(@Param("plannedDate") Date plannedDate, @Param("retryDate") Date retryDate, Pageable pageable);
@@ -91,7 +94,7 @@ public interface EventActivityRepository extends JpaRepository<EventActivity, Lo
                     "           SELECT H FROM EventHeartbeat H " +
                     "           WHERE H.executionNode = P.executionNode " +
                     ") " +
-                    "ORDER BY P.priority, P.plannedDate, P.retryDate NULLS FIRST, P.id"
+                    "ORDER BY P.priority, P.plannedDate, P.retryDate, P.id"
     )
         //SERIAL_ENTITY,        //SERIALIZE PA WITH THE SAME PROCESS ID, ENTITY ID AND ENTITY NAME
     List<EventActivity> findOrphanQueuedEntity(Pageable pageable);
@@ -104,7 +107,7 @@ public interface EventActivityRepository extends JpaRepository<EventActivity, Lo
                     "WHERE EA.processId = :processId " +
                     "  AND (:privacyId IS NULL OR EA.privacyId IS NULL OR EA.privacyId = :privacyId) " +
                     "  AND (EA.visibility IN (:eventVisibilitySet))" +
-                    "ORDER BY COALESCE (EA.retryDate, EA.plannedDate)"
+                    "ORDER BY EA.retryDate"
     )
     Page<EventActivity> findAllByProcessIdAndVisibleAndPrivacyId(
             @Param("processId") Long processId,

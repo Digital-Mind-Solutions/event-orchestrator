@@ -2,6 +2,7 @@ package org.digitalmind.eventorchestrator.service.entity.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.digitalmind.eventorchestrator.entity.EventMemo;
+import org.digitalmind.eventorchestrator.entity.EventMemoId;
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
 import org.digitalmind.eventorchestrator.repository.EventMemoRepository;
 import org.digitalmind.eventorchestrator.service.entity.EventMemoService;
@@ -28,20 +29,26 @@ public class EventMemoServiceImpl implements EventMemoService {
     }
 
     @Override
+    public EventMemo findById(EventMemoId eventMemoId) {
+        Optional<EventMemo> memo = this.eventMemoRepository.findById(eventMemoId);
+        return memo.isPresent() ? (EventMemo) memo.get() : null;
+    }
+
+    @Override
+    public Page<EventMemo> findAllByKey_PartitionKeyAndProcessIdOrderByKey_IdDesc(Integer partitionKey, Long processId, Pageable pageRequest) {
+        return eventMemoRepository.findAllByKey_PartitionKeyAndProcessIdOrderByKey_IdDesc(partitionKey, processId, pageRequest);
+    }
+
+    @Override
+    public Page<EventMemo> findAllByKey_PartitionKeyAndProcessIdAndVisibleAndPrivacyId(
+            Integer partitionKey, Long processId, Set<EventVisibility> eventVisibilitySet, Long privacyId, Pageable pageRequest
+    ) {
+        return eventMemoRepository.findAllByKey_PartitionKeyAndProcessIdAndVisibleAndPrivacyId(partitionKey, processId, eventVisibilitySet, privacyId, pageRequest);
+    }
+
+    @Override
     public EventMemo save(EventMemo eventMemo) {
         return eventMemoRepository.save(eventMemo);
-    }
-
-    @Override
-    public Page<EventMemo> findAllByProcessId(Long processId, Pageable pageRequest) {
-        return eventMemoRepository.findAllByProcessId(processId, pageRequest);
-    }
-
-    @Override
-    public Page<EventMemo> findAllByProcessIdAndVisibleAndPrivacyId(
-            Long processId, Set<EventVisibility> eventVisibilitySet, Long privacyId, Pageable pageRequest
-    ) {
-        return eventMemoRepository.findAllByProcessIdAndVisibleAndPrivacyId(processId, eventVisibilitySet, privacyId, pageRequest);
     }
 
     @Override
@@ -49,8 +56,4 @@ public class EventMemoServiceImpl implements EventMemoService {
         return eventMemoRepository.saveAll(eventMemos);
     }
 
-    public EventMemo findById(Long memoId) {
-        Optional<EventMemo> memo = this.eventMemoRepository.findById(memoId);
-        return memo.isPresent() ? (EventMemo)memo.get() : null;
-    }
 }

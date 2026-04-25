@@ -20,7 +20,7 @@ public interface EventOrchestratorEntityPlugin extends Plugin<String>, Ordered {
         return false;
     }
 
-    Object getEntity(String name, String id);
+    Object getEntity(String name, String identifier);
 
     String getEntityAlias(String name);
 

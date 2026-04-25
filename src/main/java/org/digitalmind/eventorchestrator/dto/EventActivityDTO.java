@@ -3,6 +3,7 @@ package org.digitalmind.eventorchestrator.dto;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.digitalmind.buildingblocks.core.dtobase.AuditDTO;
@@ -38,6 +39,9 @@ public class EventActivityDTO extends AuditDTO {
 
     @Schema(description = "Unique id of the process activity")
     private Long id;
+
+    @Schema(description = "The key of the process partition")
+    private Integer processPartitionKey;
 
     @Schema(description = "The id of the process")
     private Long processId;

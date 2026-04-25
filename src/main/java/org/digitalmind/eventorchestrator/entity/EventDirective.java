@@ -10,19 +10,22 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.*;
 
-import static org.digitalmind.eventorchestrator.entity.EventDirective.TABLE_NAME;
-
+import static org.digitalmind.eventorchestrator.entity.EventDirective.*;
 
 @Entity
 @Table(
         name = TABLE_NAME,
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = TABLE_NAME + "_ux1",
-                        columnNames = {"entity_name", "type", "priority"}
+        indexes = {
+                @Index(name = TABLE_IX_CREATED_AT, columnList = "created_at", unique = false),
+                @Index(name = TABLE_IX_UPDATED_AT, columnList = "updated_at", unique = false),
+                @Index(
+                        name = TABLE_SHORT_NAME + "_ux01",
+                        columnList = "entity_name, type, priority",
+                        unique = true
                 )
         }
 )
+
 @EntityListeners({AuditingEntityListener.class})
 
 @Data
@@ -42,6 +45,9 @@ import static org.digitalmind.eventorchestrator.entity.EventDirective.TABLE_NAME
 )
 public class EventDirective extends ContextVersionableAuditModel {
     public static final String TABLE_NAME = "configuration_directive";
+    static final String TABLE_SHORT_NAME = "conf_dir";
+    static final String TABLE_IX_CREATED_AT = TABLE_SHORT_NAME + "_ixcreat";
+    static final String TABLE_IX_UPDATED_AT = TABLE_SHORT_NAME + "_ixupdat";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

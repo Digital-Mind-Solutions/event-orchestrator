@@ -2,10 +2,11 @@ package org.digitalmind.eventorchestrator.entity;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
-import org.digitalmind.buildingblocks.core.jpautils.entity.IdModel;
+import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdModel;
 import org.digitalmind.eventorchestrator.converter.JpaMapJsonConverter;
 import org.digitalmind.eventorchestrator.enumeration.EventActivityType;
 import org.digitalmind.eventorchestrator.enumeration.EventMemoStatus;
@@ -14,19 +15,18 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import jakarta.persistence.*;
 import java.util.Map;
 
-import static org.digitalmind.eventorchestrator.entity.EventMemo.TABLE_NAME;
+import static org.digitalmind.eventorchestrator.entity.EventMemo.*;
 
 @Entity
-@Table(name = TABLE_NAME,
+@Table(
+        name = TABLE_NAME,
         indexes = {
-                @Index(
-                        name = TABLE_NAME + "_ix1",
-                        columnList = "context_id",
-                        unique = false
-                )
+                @Index(name = TABLE_IX_CREATED_AT, columnList = "created_at", unique = false),
+                @Index(name = TABLE_IX_UPDATED_AT, columnList = "updated_at", unique = false),
+                @Index(name = TABLE_IX_PARTITION_PROCESS_ID, columnList = "partition_key, process_id, id", unique = false),
+                @Index(name = TABLE_IX_PARTITION_CONTEXT_ID, columnList = "partition_key, context_id", unique = false),
         }
 )
 @EntityListeners({AuditingEntityListener.class})
@@ -39,21 +39,50 @@ import static org.digitalmind.eventorchestrator.entity.EventMemo.TABLE_NAME;
 @AllArgsConstructor
 @JsonPropertyOrder(
         {
+                "partitionKey",
                 "id", "processId", "parentId", "type",
                 "createdAt", "createdBy", "updatedAt", "updatedBy"
         }
 )
 @Schema(description = "Process memo")
 @ToString(callSuper = true)
-public class EventMemo extends ContextVersionableAuditModel implements ProcessAuditModel, IdModel<Long> {
+public class EventMemo extends ContextVersionableAuditModel implements ProcessAuditModel, PartitionedIdModel<Integer, Long> {
 
-    public static final String TABLE_NAME = "process_memo";
+    static final String TABLE_NAME = "process_memo";
+    static final String TABLE_SHORT_NAME = "pr_memo";
+    static final String TABLE_IX_CREATED_AT = TABLE_SHORT_NAME + "_ixcreat";
+    static final String TABLE_IX_UPDATED_AT = TABLE_SHORT_NAME + "_ixupdat";
+    static final String TABLE_IX_EXTERNAL_IDENTIFIER = TABLE_SHORT_NAME + "_ixextidf";
+    static final String TABLE_IX_PARTITION_PROCESS_ID = TABLE_SHORT_NAME + "_ixpkprcid";
+    static final String TABLE_IX_PARTITION_CONTEXT_ID = TABLE_SHORT_NAME + "_ixpkctxid";
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Schema(description = "Unique id of the process activity")
-    @Column(name = "id")
-    private Long id;
+    @EmbeddedId
+    @Getter(AccessLevel.PUBLIC)
+    @Setter(AccessLevel.PROTECTED)
+    private EventMemoId key;
+
+    public Integer getPartitionKey() {
+        return key != null ? key.getPartitionKey() : null;
+    }
+
+    public void setPartitionKey(Integer partitionKey) {
+        if (key == null) {
+            key = new EventMemoId();
+        }
+        key.setPartitionKey(partitionKey);
+    }
+
+    @Override
+    public Long getId() {
+        return key != null ? key.getId() : null;
+    }
+
+    public void setId(Long id) {
+        if (key == null) {
+            key = new EventMemoId();
+        }
+        key.setId(id);
+    }
 
     @Schema(description = "The name of the process")
     @Column(name = "process_name", length = 500)

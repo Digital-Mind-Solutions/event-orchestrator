@@ -20,6 +20,7 @@ import java.util.Map;
 @Data
 @JsonPropertyOrder(
         {
+                "partitionKey",
                 "id",
                 "processId", "parentId",
                 "activityId", "type", "code",
@@ -33,6 +34,9 @@ import java.util.Map;
 )
 @Schema(description = "The process memo.")
 public class EventMemoDTO extends AuditDTO {
+
+    @Schema(description = "Partition key of the process memo")
+    private Integer partitionKey;
 
     @Schema(description = "Unique id of the process memo")
     private Long id;

@@ -17,7 +17,7 @@ public class EventOrchestratorNoSupportPlugin extends EventOrchestratorAbstractE
     }
 
     @Override
-    protected Object getEntityInternal(String name, String id) {
+    protected Object getEntityInternal(String name, String identifier) {
         throw new EventOrchestratorFatalException("Unable to find event orchestrator plugin to load entity of type <" + name + ">");
     }
 

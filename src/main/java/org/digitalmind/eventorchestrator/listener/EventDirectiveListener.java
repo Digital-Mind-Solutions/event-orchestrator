@@ -27,6 +27,7 @@ public class EventDirectiveListener implements
     private final EventDirectiveService eventDirectiveService;
     private final EntityManagerFactory entityManagerFactory;
 
+    //TODO esigDBEntityManagerFactory e cuplat .... redenumeste sin in aplicatia utilizatoare fa alias cumva...evita cuplarea cu orice parte de esign
     @Autowired
     public EventDirectiveListener(
             EventDirectiveService eventDirectiveService,

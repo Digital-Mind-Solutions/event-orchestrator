@@ -75,6 +75,7 @@ public abstract class EventActivityMapper implements IMapper {
         }
         return EventActivityDTO.builder()
                 .id(eventActivity.getId())
+                .processPartitionKey(eventActivity.getProcessPartitionKey())
                 .processId(eventActivity.getProcessId())
                 .parentMemoId(eventActivity.getParentMemoId())
                 .type(eventActivity.getType())

@@ -16,7 +16,7 @@ public interface EventOrchestratorService extends IService {
 
     EventActivity createEventActivity(RequestContext requestContext, EventActivity eventActivityRequest);
 
-    void triggerEventActivities(RequestContext requestContext, Long processId, String processName, Long parentMemoId, String code, String status, Object trigger);
+    void triggerEventActivities(RequestContext requestContext, Integer processPartitionKey, Long processId, String processName, Long parentMemoId, String code, String status, Object trigger);
 
     EventMemo executeEventActivity(RequestContext requestContext, EventActivity eventActivity, EventActivityExecutionMode executionMode);
 

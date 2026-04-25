@@ -80,6 +80,7 @@ public abstract class EventMemoMapper implements IMapper {
         EventMemoDTO.EventMemoDTOBuilder builder = EventMemoDTO.builder();
 
         builder
+                .partitionKey(eventMemo.getPartitionKey())
                 .id(eventMemo.getId())
                 .processId(eventMemo.getProcessId())
                 .parentId(eventMemo.getParentId())

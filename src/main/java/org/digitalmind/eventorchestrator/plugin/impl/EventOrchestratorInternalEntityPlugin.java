@@ -2,13 +2,21 @@ package org.digitalmind.eventorchestrator.plugin.impl;
 
 import org.digitalmind.eventorchestrator.entity.*;
 import org.digitalmind.eventorchestrator.repository.*;
+import org.digitalmind.eventorchestrator.service.entity.EventMemoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class EventOrchestratorInternalEntityPlugin extends EventOrchestratorAbstractEntityPlugin {
 
-    private final EventMemoRepository eventMemoRepository;
+    public static final String EVENT_MEMO = "EventMemo";
+    public static final String EVENT_ACTIVITY = "EventActivity";
+    public static final String EVENT_DIRECTIVE = "EventDirective";
+    public static final String TEMPLATE_ACTIVITY = "TemplateActivity";
+    public static final String TEMPLATE_ACTIVITY_ACTIVATOR = "TemplateActivityActivator";
+    public static final String TEMPLATE_FLOW = "TemplateFlow";
+
+    private final EventMemoService eventMemoService;
     private final EventActivityRepository eventActivityRepository;
     private final EventDirectiveRepository eventDirectiveRepository;
     private final TemplateActivityRepository templateActivityRepository;
@@ -17,14 +25,14 @@ public class EventOrchestratorInternalEntityPlugin extends EventOrchestratorAbst
 
     @Autowired
     public EventOrchestratorInternalEntityPlugin(
-            EventMemoRepository eventMemoRepository,
+            EventMemoService eventMemoService,
             EventActivityRepository eventActivityRepository,
             EventDirectiveRepository eventDirectiveRepository,
             TemplateActivityRepository templateActivityRepository,
             TemplateActivityActivatorRepository templateActivityActivatorRepository,
             TemplateFlowRepository templateFlowRepository
     ) {
-        this.eventMemoRepository = eventMemoRepository;
+        this.eventMemoService = eventMemoService;
         this.eventActivityRepository = eventActivityRepository;
         this.eventDirectiveRepository = eventDirectiveRepository;
         this.templateActivityRepository = templateActivityRepository;
@@ -37,68 +45,71 @@ public class EventOrchestratorInternalEntityPlugin extends EventOrchestratorAbst
         return Integer.MIN_VALUE;
     }
 
-    @Override
-    public boolean supportsInternal(String name) {
 
-        if (EventMemo.class.getCanonicalName().equals(name) || EventMemo.class.getSimpleName().equals(name)) {
-            return true;
-        }
-
-        if (EventActivity.class.getCanonicalName().equals(name) || EventActivity.class.getSimpleName().equals(name)) {
-            return true;
-        }
-
-        if (EventDirective.class.getCanonicalName().equals(name) || EventDirective.class.getSimpleName().equals(name)) {
-            return true;
-        }
-
-        if (TemplateActivity.class.getCanonicalName().equals(name) || TemplateActivity.class.getSimpleName().equals(name)) {
-            return true;
-        }
-
-        if (TemplateActivityActivator.class.getCanonicalName().equals(name) || TemplateActivityActivator.class.getSimpleName().equals(name)) {
-            return true;
-        }
-
-        if (TemplateFlow.class.getCanonicalName().equals(name) || TemplateFlow.class.getSimpleName().equals(name)) {
-            return true;
-        }
-
-        return false;
+    String normalizeClassName(String name) {
+        int idx = name.lastIndexOf('.');
+        return idx >= 0 ? name.substring(idx + 1) : name;
     }
 
     @Override
-    public Object getEntityInternal(String name, String id) {
+    public boolean supportsInternal(String name) {
 
-        if (EventMemo.class.getCanonicalName().equals(name) || EventMemo.class.getSimpleName().equals(name)) {
-            return eventMemoRepository.findById(Long.valueOf(id)).orElse(null);
+        switch (normalizeClassName(name)) {
+            case EVENT_MEMO:
+            case EVENT_ACTIVITY:
+            case EVENT_DIRECTIVE:
+            case TEMPLATE_ACTIVITY:
+            case TEMPLATE_ACTIVITY_ACTIVATOR:
+            case TEMPLATE_FLOW:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    @Override
+    public Object getEntityInternal(String name, String identifier) {
+        String entityName = normalizeClassName(name);
+        switch (entityName) {
+
+            case EVENT_MEMO: {
+                EventMemoId key = EventMemoId.fromIdentifier(identifier);
+                EventMemo entity = eventMemoService.findById(key);
+                return entity;
+            }
+            case EVENT_ACTIVITY: {
+                Long id = Long.parseLong(identifier);
+                EventActivity entity = eventActivityRepository.findById(id).orElse(null);
+                return entity;
+            }
+            case EVENT_DIRECTIVE: {
+                Long id = Long.parseLong(identifier);
+                EventDirective entity = eventDirectiveRepository.findById(id).orElse(null);
+                return entity;
+            }
+            case TEMPLATE_ACTIVITY: {
+                Long id = Long.parseLong(identifier);
+                TemplateActivity entity = templateActivityRepository.findById(id).orElse(null);
+                return entity;
+            }
+            case TEMPLATE_ACTIVITY_ACTIVATOR: {
+                Long id = Long.parseLong(identifier);
+                TemplateActivityActivator entity = templateActivityActivatorRepository.findById(id).orElse(null);
+                return entity;
+            }
+            case TEMPLATE_FLOW: {
+                Long id = Long.parseLong(identifier);
+                TemplateFlow entity = templateFlowRepository.findById(id).orElse(null);
+                return entity;
+            }
+            default:
+                return null;
         }
 
-        if (EventActivity.class.getCanonicalName().equals(name) || EventActivity.class.getSimpleName().equals(name)) {
-            return eventActivityRepository.findById(Long.valueOf(id)).orElse(null);
-        }
-
-        if (EventDirective.class.getCanonicalName().equals(name) || EventDirective.class.getSimpleName().equals(name)) {
-            return eventDirectiveRepository.findById(Long.valueOf(id)).orElse(null);
-        }
-
-        if (TemplateActivity.class.getCanonicalName().equals(name) || TemplateActivity.class.getSimpleName().equals(name)) {
-            return templateActivityRepository.findById(Long.valueOf(id)).orElse(null);
-        }
-
-        if (TemplateActivityActivator.class.getCanonicalName().equals(name) || TemplateActivityActivator.class.getSimpleName().equals(name)) {
-            return templateActivityActivatorRepository.findById(Long.valueOf(id)).orElse(null);
-        }
-
-        if (TemplateFlow.class.getCanonicalName().equals(name) || TemplateFlow.class.getSimpleName().equals(name)) {
-            return templateFlowRepository.findById(Long.valueOf(id)).orElse(null);
-        }
-
-        return null;
     }
 
     @Override
     public String getEntityAlias(String name) {
-        return getEntityAliasAsSimpleName(name);
+        return normalizeClassName(getEntityAliasAsSimpleName(name));
     }
 }
