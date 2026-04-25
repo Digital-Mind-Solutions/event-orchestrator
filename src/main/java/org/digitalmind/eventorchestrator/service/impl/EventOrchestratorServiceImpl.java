@@ -19,6 +19,7 @@ import org.digitalmind.buildingblocks.core.requestcontext.service.RequestContext
 import org.digitalmind.buildingblocks.core.spel.service.SpelService;
 import org.digitalmind.eventorchestrator.config.EventOrchestratorConfig;
 import org.digitalmind.eventorchestrator.entity.*;
+import org.digitalmind.eventorchestrator.entity.MemoId;
 import org.digitalmind.eventorchestrator.enumeration.*;
 import org.digitalmind.eventorchestrator.exception.EventOrchestratorException;
 import org.digitalmind.eventorchestrator.exception.EventOrchestratorFatalException;
@@ -457,6 +458,11 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         context.putAll(requestContext.getDetails());
         eventMemoRequest.setContext(context);
         eventMemoRequest.setVisibility(eventMemoRequest.getVisibility() != null ? eventMemoRequest.getVisibility() : EventVisibility.ADMIN);
+        if (eventMemoRequest.getPartitionKey() == null) {
+            EventOrchestratorProcess resolved =
+                    (EventOrchestratorProcess) getEntity(eventMemoRequest.getProcessName(), eventMemoRequest.getProcessId());
+            eventMemoRequest.setPartitionKey(resolveProcessPartitionKey(resolved));
+        }
         return eventMemoService.save(eventMemoRequest);
     }
 
@@ -743,7 +749,10 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                 paContextMap.put("process", process);
             }
 
-            Object entity = getEntity(eventActivity.getEntityName(), eventActivity.getEntityId());
+            Object entity = getEntity(
+                    eventActivity.getEntityName(),
+                    resolveEntityLookupId(eventActivity.getEntityName(), eventActivity.getEntityId(), process)
+            );
             if (entity != null) {
                 paContextMap.put("entity", entity);
             }
@@ -859,6 +868,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             }
 
         }
+        processMemoBuilder.pk(MemoId.of(resolveProcessPartitionKey(process), null));
         if (EventActivityExecutionMode.ASYNC.equals(executionMode)) {
             eventMemoResult = eventMemoService.save(processMemoBuilder.build());
         } else {
@@ -971,6 +981,43 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         }
 
         return eventRetryPolicy;
+    }
+
+    private static Integer resolveProcessPartitionKey(EventOrchestratorProcess process) {
+        if (process == null) {
+            return 0;
+        }
+        if (process instanceof PartitionedIdModel<?, ?> pm) {
+            Object pk = pm.getPartitionKey();
+            if (pk instanceof Integer) {
+                return (Integer) pk;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * For {@link EventMemo}, repository access needs {@code partition_key} and {@code id}.
+     * Activities may store only the memo id; partition comes from the resolved process {@link PartitionedIdModel}.
+     * If {@code entityId} is already {@code partitionKey:memoId}, it is left unchanged.
+     */
+    private String resolveEntityLookupId(String entityName, String entityId, EventOrchestratorProcess process) {
+        if (entityId == null || entityName == null) {
+            return entityId;
+        }
+        if (entityId.contains(":")) {
+            return entityId;
+        }
+        String n = unproxyClassName(entityName);
+        if (EventMemo.class.getSimpleName().equals(n) || EventMemo.class.getCanonicalName().equals(n)) {
+            if (process == null) {
+                throw new EventOrchestratorFatalException(
+                        "EventMemo entity load requires process context to supply partition_key when entity_id is not composite (<partitionKey>:<memoId>)"
+                );
+            }
+            return resolveProcessPartitionKey(process) + ":" + entityId;
+        }
+        return entityId;
     }
 
 }

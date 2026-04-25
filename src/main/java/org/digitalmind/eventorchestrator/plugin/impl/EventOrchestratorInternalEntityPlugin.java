@@ -2,7 +2,6 @@ package org.digitalmind.eventorchestrator.plugin.impl;
 
 import org.digitalmind.eventorchestrator.entity.*;
 import org.digitalmind.eventorchestrator.repository.*;
-import org.digitalmind.eventorchestrator.service.entity.EventMemoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
