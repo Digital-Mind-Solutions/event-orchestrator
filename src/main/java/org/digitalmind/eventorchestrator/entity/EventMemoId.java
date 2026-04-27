@@ -1,26 +1,24 @@
 package org.digitalmind.eventorchestrator.entity;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdModel;
 
-@Embeddable
+import java.io.Serializable;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 
-public class EventMemoId implements PartitionedIdModel<Integer, Long> {
+public class EventMemoId implements PartitionedIdModel<Integer, Long>, Serializable {
+    private static final long serialVersionUID = 1L;
 
-    @Column(name = "[partition_key]", nullable = false)
+    @Column(name = "partition_key", nullable = false)
     private Integer partitionKey;
 
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "[id]", nullable = false)
+    @Column(name = "id", nullable = false)
     private Long id;
 
     public static EventMemoId of(Integer partitionKey, Long id) {

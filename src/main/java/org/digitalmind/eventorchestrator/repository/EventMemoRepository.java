@@ -15,23 +15,24 @@ import java.util.Set;
 @Repository
 public interface EventMemoRepository extends JpaRepository<EventMemo, EventMemoId> {
 
-    EventMemo getByKey_PartitionKeyAndContextId(Integer partitionKey, String contextId);
+    EventMemo getByPartitionKeyAndContextId(Integer partitionKey, String contextId);
 
-    Page<EventMemo> findAllByKey_PartitionKeyAndProcessIdOrderByKey_IdDesc(Integer partitionKey, Long processId, Pageable pageRequest);
+    Page<EventMemo> findAllByPartitionKeyAndProcessIdOrderByIdDesc(Integer partitionKey, Long processId, Pageable pageRequest);
 
     @Query(
             "SELECT EM FROM EventMemo EM " +
-                    "WHERE EM.key.partitionKey = :partitionKey " +
+                    "WHERE EM.partitionKey = :partitionKey " +
                     "  AND EM.processId = :processId " +
                     "  AND (:privacyId IS NULL OR EM.privacyId IS NULL OR EM.privacyId = :privacyId) " +
                     "  AND (EM.visibility IN :eventVisibilitySet) " +
                     "ORDER BY EM.createdAt DESC"
     )
-    Page<EventMemo> findAllByKey_PartitionKeyAndProcessIdAndVisibleAndPrivacyId(
+    Page<EventMemo> findAllByPartitionKeyAndProcessIdAndVisibleAndPrivacyId(
             @Param("partitionKey") Integer partitionKey,
             @Param("processId") Long processId,
             @Param("eventVisibilitySet") Set<EventVisibility> eventVisibilitySet,
             @Param("privacyId") Long privacyId,
             Pageable pageable
     );
+
 }

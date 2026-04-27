@@ -723,7 +723,8 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             requestContext = getOrDefault(requestContext);
 
             processMemoBuilder
-                    .key(EventMemoId.of(eventActivity.getProcessPartitionKey(), null))
+                    .partitionKey(eventActivity.getProcessPartitionKey())
+                    .id(null)
                     .parentId(eventActivity.getParentMemoId())
                     .processName(eventActivity.getProcessName())
                     .processId(eventActivity.getProcessId())
@@ -868,7 +869,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             }
 
         }
-        processMemoBuilder.pk(MemoId.of(resolveProcessPartitionKey(process), null));
+        processMemoBuilder.partitionKey(resolveProcessPartitionKey(process));
         if (EventActivityExecutionMode.ASYNC.equals(executionMode)) {
             eventMemoResult = eventMemoService.save(processMemoBuilder.build());
         } else {

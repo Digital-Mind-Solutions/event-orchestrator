@@ -20,6 +20,7 @@ import java.util.Map;
 import static org.digitalmind.eventorchestrator.entity.EventMemo.*;
 
 @Entity
+@IdClass(EventMemoId.class)
 @Table(
         name = TABLE_NAME,
         indexes = {
@@ -56,33 +57,14 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     static final String TABLE_IX_PARTITION_PROCESS_ID = TABLE_SHORT_NAME + "_ixpkprcid";
     static final String TABLE_IX_PARTITION_CONTEXT_ID = TABLE_SHORT_NAME + "_ixpkctxid";
 
-    @EmbeddedId
-    @Getter(AccessLevel.PUBLIC)
-    @Setter(AccessLevel.PROTECTED)
-    private EventMemoId key;
+    @Id
+    @Column(name = "partition_key", nullable = false)
+    private Integer partitionKey;
 
-    public Integer getPartitionKey() {
-        return key != null ? key.getPartitionKey() : null;
-    }
-
-    public void setPartitionKey(Integer partitionKey) {
-        if (key == null) {
-            key = new EventMemoId();
-        }
-        key.setPartitionKey(partitionKey);
-    }
-
-    @Override
-    public Long getId() {
-        return key != null ? key.getId() : null;
-    }
-
-    public void setId(Long id) {
-        if (key == null) {
-            key = new EventMemoId();
-        }
-        key.setId(id);
-    }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
+    private Long id;
 
     @Schema(description = "The name of the process")
     @Column(name = "process_name", length = 500)

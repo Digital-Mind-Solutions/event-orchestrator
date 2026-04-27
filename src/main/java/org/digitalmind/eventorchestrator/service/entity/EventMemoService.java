@@ -15,9 +15,9 @@ public interface EventMemoService {
 
     EventMemo findById(EventMemoId eventMemoId);
 
-    Page<EventMemo> findAllByKey_PartitionKeyAndProcessIdOrderByKey_IdDesc(Integer partitionKey, Long processId, Pageable pageRequest);
+    Page<EventMemo> findAllByPartitionKeyAndProcessIdOrderByIdDesc(Integer partitionKey, Long processId, Pageable pageRequest);
 
-    Page<EventMemo> findAllByKey_PartitionKeyAndProcessIdAndVisibleAndPrivacyId(
+    Page<EventMemo> findAllByPartitionKeyAndProcessIdAndVisibleAndPrivacyId(
             Integer partitionKey, Long processId, Set<EventVisibility> eventVisibilitySet, Long privacyId, Pageable pageRequest
     );
 

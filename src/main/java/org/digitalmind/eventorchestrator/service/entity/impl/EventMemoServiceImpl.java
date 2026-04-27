@@ -35,15 +35,15 @@ public class EventMemoServiceImpl implements EventMemoService {
     }
 
     @Override
-    public Page<EventMemo> findAllByKey_PartitionKeyAndProcessIdOrderByKey_IdDesc(Integer partitionKey, Long processId, Pageable pageRequest) {
-        return eventMemoRepository.findAllByKey_PartitionKeyAndProcessIdOrderByKey_IdDesc(partitionKey, processId, pageRequest);
+    public Page<EventMemo> findAllByPartitionKeyAndProcessIdOrderByIdDesc(Integer partitionKey, Long processId, Pageable pageRequest) {
+        return eventMemoRepository.findAllByPartitionKeyAndProcessIdOrderByIdDesc(partitionKey, processId, pageRequest);
     }
 
     @Override
-    public Page<EventMemo> findAllByKey_PartitionKeyAndProcessIdAndVisibleAndPrivacyId(
+    public Page<EventMemo> findAllByPartitionKeyAndProcessIdAndVisibleAndPrivacyId(
             Integer partitionKey, Long processId, Set<EventVisibility> eventVisibilitySet, Long privacyId, Pageable pageRequest
     ) {
-        return eventMemoRepository.findAllByKey_PartitionKeyAndProcessIdAndVisibleAndPrivacyId(partitionKey, processId, eventVisibilitySet, privacyId, pageRequest);
+        return eventMemoRepository.findAllByPartitionKeyAndProcessIdAndVisibleAndPrivacyId(partitionKey, processId, eventVisibilitySet, privacyId, pageRequest);
     }
 
     @Override
