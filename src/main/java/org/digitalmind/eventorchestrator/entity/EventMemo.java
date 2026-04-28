@@ -13,6 +13,7 @@ import org.digitalmind.eventorchestrator.enumeration.EventMemoStatus;
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.Map;
@@ -47,7 +48,7 @@ import static org.digitalmind.eventorchestrator.entity.EventMemo.*;
 )
 @Schema(description = "Process memo")
 @ToString(callSuper = true)
-public class EventMemo extends ContextVersionableAuditModel implements ProcessAuditModel, PartitionedIdModel<Integer, Long> {
+public class EventMemo extends ContextVersionableAuditModel implements ProcessAuditModel, PartitionedIdModel<Integer, Long>, Persistable<Long> {
 
     static final String TABLE_NAME = "process_memo";
     static final String TABLE_SHORT_NAME = "pr_memo";
@@ -65,6 +66,12 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
+
+    @Override
+    @Transient
+    public boolean isNew() {
+        return getId() == null;
+    }
 
     @Schema(description = "The name of the process")
     @Column(name = "process_name", length = 500)
