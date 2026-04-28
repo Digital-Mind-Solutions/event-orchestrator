@@ -1,5 +1,6 @@
 package org.digitalmind.eventorchestrator.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
@@ -7,6 +8,8 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdModel;
+import org.digitalmind.buildingblocks.core.jpautils.entity.generator.PartitionAwareIdModel;
+import org.digitalmind.buildingblocks.core.jpautils.entity.generator.PartitionAwareTableId;
 import org.digitalmind.eventorchestrator.converter.JpaMapJsonConverter;
 import org.digitalmind.eventorchestrator.enumeration.EventActivityType;
 import org.digitalmind.eventorchestrator.enumeration.EventMemoStatus;
@@ -48,7 +51,7 @@ import static org.digitalmind.eventorchestrator.entity.EventMemo.*;
 )
 @Schema(description = "Process memo")
 @ToString(callSuper = true)
-public class EventMemo extends ContextVersionableAuditModel implements ProcessAuditModel, PartitionedIdModel<Integer, Long>, Persistable<Long> {
+public class EventMemo extends ContextVersionableAuditModel implements ProcessAuditModel, PartitionedIdModel<Integer, Long>, Persistable<Long>, PartitionAwareIdModel<Integer, Long> {
 
     static final String TABLE_NAME = "process_memo";
     static final String TABLE_SHORT_NAME = "pr_memo";
@@ -63,15 +66,16 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     private Integer partitionKey;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
+    @PartitionAwareTableId(
+            table = "seq_event_orchestrator",
+            pkColumnName = "partition_aware_generator",
+            valueColumnName = "next_val",
+            pkColumnValue = "seq_process_memo",
+            allocationSize = 50,
+            initialValue = 1
+    )
+    @Column(name = "id", nullable = false, updatable = false)
     private Long id;
-
-    @Override
-    @Transient
-    public boolean isNew() {
-        return getId() == null;
-    }
 
     @Schema(description = "The name of the process")
     @Column(name = "process_name", length = 500)
@@ -141,5 +145,17 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     @Schema(description = "The privacy id")
     @Column(name = "privacy_id")
     private Long privacyId;
+
+    @Override
+    @Transient
+    @JsonIgnore
+    public boolean isNew() {
+        return getId() == null;
+    }
+
+    @Override
+    public Integer calcPartitionKey(Long id) {
+        return this.getPartitionKey();
+    }
 
 }
