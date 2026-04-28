@@ -68,7 +68,7 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     @Id
     @PartitionAwareTableId(
             table = "seq_event_orchestrator",
-            pkColumnName = "partition_aware_generator",
+            pkColumnName = "sequence_name",
             valueColumnName = "next_val",
             pkColumnValue = "seq_process_memo",
             allocationSize = 50,
