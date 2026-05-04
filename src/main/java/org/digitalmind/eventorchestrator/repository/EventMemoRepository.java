@@ -21,7 +21,7 @@ public interface EventMemoRepository extends JpaRepository<EventMemo, EventMemoI
 
     @Query(
             "SELECT EM FROM EventMemo EM " +
-                    "WHERE EM.partitionKey = :partitionKey " +
+                    "WHERE EM.key.partitionKey = :partitionKey " +
                     "  AND EM.processId = :processId " +
                     "  AND (:privacyId IS NULL OR EM.privacyId IS NULL OR EM.privacyId = :privacyId) " +
                     "  AND (EM.visibility IN :eventVisibilitySet) " +

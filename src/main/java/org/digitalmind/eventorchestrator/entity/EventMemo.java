@@ -24,7 +24,6 @@ import java.util.Map;
 import static org.digitalmind.eventorchestrator.entity.EventMemo.*;
 
 @Entity
-@IdClass(EventMemoId.class)
 @Table(
         name = TABLE_NAME,
         indexes = {

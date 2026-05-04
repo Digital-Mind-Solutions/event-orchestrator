@@ -1,6 +1,7 @@
 package org.digitalmind.eventorchestrator.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,10 +10,10 @@ import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdModel;
 
 import java.io.Serializable;
 
+@Embeddable
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
 public class EventMemoId implements PartitionedIdModel<Integer, Long>, PartitionedIdCreateModel<Integer, Long, EventMemoId>, Serializable {
     private static final long serialVersionUID = 1L;
 
