@@ -19,7 +19,6 @@ import org.digitalmind.buildingblocks.core.requestcontext.service.RequestContext
 import org.digitalmind.buildingblocks.core.spel.service.SpelService;
 import org.digitalmind.eventorchestrator.config.EventOrchestratorConfig;
 import org.digitalmind.eventorchestrator.entity.*;
-import org.digitalmind.eventorchestrator.entity.MemoId;
 import org.digitalmind.eventorchestrator.enumeration.*;
 import org.digitalmind.eventorchestrator.exception.EventOrchestratorException;
 import org.digitalmind.eventorchestrator.exception.EventOrchestratorFatalException;
@@ -721,10 +720,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         EventOrchestratorProcess process = null;
         try {
             requestContext = getOrDefault(requestContext);
-
             processMemoBuilder
-                    .partitionKey(eventActivity.getProcessPartitionKey())
-                    .id(null)
                     .parentId(eventActivity.getParentMemoId())
                     .processName(eventActivity.getProcessName())
                     .processId(eventActivity.getProcessId())
@@ -739,8 +735,10 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                     .context(eventActivity.getContext())
                     .contextId(eventActivity.getContextId())
             ;
+
             String processIdentifier = PartitionedIdModel.calcIdentifier(eventActivity.getProcessPartitionKey(), eventActivity.getProcessId());
             process = (EventOrchestratorProcess) getEntity(eventActivity.getProcessName(), processIdentifier);
+
 
             ConcurrentHashMap<String, Object> paContextMap = new ConcurrentHashMap<>();
             if (requestContext != null) {
@@ -748,6 +746,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             }
             if (process != null) {
                 paContextMap.put("process", process);
+                paContextMap.put("partitionKey", process.getPartitionKey());
             }
 
             Object entity = getEntity(
@@ -869,11 +868,12 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             }
 
         }
-        processMemoBuilder.partitionKey(resolveProcessPartitionKey(process));
+        EventMemo processMemo = processMemoBuilder.build();
+        processMemo.setPartitionKey(resolveProcessPartitionKey(process));
         if (EventActivityExecutionMode.ASYNC.equals(executionMode)) {
-            eventMemoResult = eventMemoService.save(processMemoBuilder.build());
+            eventMemoResult = eventMemoService.save(processMemo);
         } else {
-            eventMemoResult = processMemoBuilder.build();
+            eventMemoResult = processMemo;
         }
 
         return eventMemoResult;
@@ -985,16 +985,13 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
     }
 
     private static Integer resolveProcessPartitionKey(EventOrchestratorProcess process) {
-        if (process == null) {
-            return 0;
-        }
-        if (process instanceof PartitionedIdModel<?, ?> pm) {
+        if (process != null && process instanceof PartitionedIdModel<?, ?> pm) {
             Object pk = pm.getPartitionKey();
             if (pk instanceof Integer) {
                 return (Integer) pk;
             }
         }
-        return 0;
+        return null;
     }
 
     /**

@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.generator.PartitionAwareIdModel;
-import org.digitalmind.buildingblocks.core.jpautils.entity.generator.PartitionAwareTableId;
+import org.digitalmind.buildingblocks.core.jpautils.entity.generator.PartitionedIdCreateTableId;
 import org.digitalmind.eventorchestrator.converter.JpaMapJsonConverter;
 import org.digitalmind.eventorchestrator.enumeration.EventActivityType;
 import org.digitalmind.eventorchestrator.enumeration.EventMemoStatus;
@@ -61,12 +61,9 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     static final String TABLE_IX_PARTITION_PROCESS_ID = TABLE_SHORT_NAME + "_ixpkprcid";
     static final String TABLE_IX_PARTITION_CONTEXT_ID = TABLE_SHORT_NAME + "_ixpkctxid";
 
-    @Id
-    @Column(name = "partition_key", nullable = false)
-    private Integer partitionKey;
 
-    @Id
-    @PartitionAwareTableId(
+    @EmbeddedId
+    @PartitionedIdCreateTableId(
             table = "seq_" + TABLE_NAME,
             pkColumnName = "sequence_name",
             valueColumnName = "next_val",
@@ -74,8 +71,7 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
             allocationSize = 50,
             initialValue = 1
     )
-    @Column(name = "id", nullable = false, updatable = false)
-    private Long id;
+    private EventMemoId key;
 
     @Schema(description = "The name of the process")
     @Column(name = "process_name", length = 500)
@@ -146,6 +142,20 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     @Column(name = "privacy_id")
     private Long privacyId;
 
+    /**
+     * Partition key supplied before {@link #key} exists. Does not allocate {@link EventMemoId}; keeps
+     * {@code key == null} until the id generator runs. {@link #getPartitionKey()} reads this when
+     * {@code key} is null or has no partition yet; {@link #calcPartitionKey(Long)} delegates to
+     * {@link #getPartitionKey()} so {@link PartitionedIdCreateTableId} picks up the same value.
+     */
+    @Transient
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private Integer partitionKeyStaging;
+
     @Override
     @Transient
     @JsonIgnore
@@ -157,5 +167,35 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     public Integer calcPartitionKey(Long id) {
         return this.getPartitionKey();
     }
+
+    @Override
+    @Transient
+    public Integer getPartitionKey() {
+        if (key != null && key.getPartitionKey() != null) {
+            return key.getPartitionKey();
+        }
+        if (partitionKeyStaging != null) {
+            return partitionKeyStaging;
+        }
+        return null;
+    }
+
+    @Override
+    @Transient
+    public void setPartitionKey(Integer partitionKey) {
+        if (key != null) {
+            key.setPartitionKey(partitionKey);
+            partitionKeyStaging = null;
+            return;
+        }
+        partitionKeyStaging = partitionKey;
+    }
+
+    @Override
+    @Transient
+    public Long getId() {
+        return key != null ? key.getId() : null;
+    }
+
 
 }

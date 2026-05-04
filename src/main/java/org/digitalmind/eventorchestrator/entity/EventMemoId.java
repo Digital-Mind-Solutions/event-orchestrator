@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdCreateModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdModel;
 
 import java.io.Serializable;
@@ -12,7 +13,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 
-public class EventMemoId implements PartitionedIdModel<Integer, Long>, Serializable {
+public class EventMemoId implements PartitionedIdModel<Integer, Long>, PartitionedIdCreateModel<Integer, Long, EventMemoId>, Serializable {
     private static final long serialVersionUID = 1L;
 
     @Column(name = "partition_key", nullable = false)
@@ -33,4 +34,10 @@ public class EventMemoId implements PartitionedIdModel<Integer, Long>, Serializa
                         )
         );
     }
+
+    @Override
+    public EventMemoId createKey(Integer partitionKey, Long id) {
+        return of(partitionKey, id);
+    }
+
 }
