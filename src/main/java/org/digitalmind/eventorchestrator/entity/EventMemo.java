@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
+import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdCreateModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.generator.PartitionAwareIdModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.generator.PartitionedIdCreateTableId;
@@ -50,7 +51,9 @@ import static org.digitalmind.eventorchestrator.entity.EventMemo.*;
 )
 @Schema(description = "Process memo")
 @ToString(callSuper = true)
-public class EventMemo extends ContextVersionableAuditModel implements ProcessAuditModel, PartitionedIdModel<Integer, Long>, Persistable<Long>, PartitionAwareIdModel<Integer, Long> {
+public class EventMemo extends ContextVersionableAuditModel implements ProcessAuditModel,
+        PartitionedIdModel<Integer, Long>, Persistable<Long>, PartitionAwareIdModel<Integer, Long>,
+        PartitionedIdCreateModel<Integer, Long, EventMemoId> {
 
     static final String TABLE_NAME = "process_memo";
     static final String TABLE_SHORT_NAME = "pr_memo";
@@ -196,5 +199,11 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
         return key != null ? key.getId() : null;
     }
 
+    @Override
+    public EventMemoId createKey(Integer partitionKey, Long id) {
+        Integer resolvedPartitionKey = (partitionKey != null) ? partitionKey : calcPartitionKey(id);
+        EventMemoId createdId = EventMemoId.of(resolvedPartitionKey, id);
+        return createdId;
+    }
 
 }
