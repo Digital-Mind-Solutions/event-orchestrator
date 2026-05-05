@@ -68,37 +68,37 @@ public class EventOrchestratorInternalEntityPlugin extends EventOrchestratorAbst
     }
 
     @Override
-    public Object getEntityInternal(String name, String identifier) {
+    public Object getEntityInternal(String name, String indentifier) {
         String entityName = normalizeClassName(name);
         switch (entityName) {
 
             case EVENT_MEMO: {
-                EventMemoId key = EventMemoId.fromIdentifier(identifier);
+                EventMemoId key = EventMemoId.fromIdentifier(indentifier);
                 EventMemo entity = eventMemoService.findById(key);
                 return entity;
             }
             case EVENT_ACTIVITY: {
-                Long id = Long.parseLong(identifier);
+                Long id = Long.parseLong(indentifier);
                 EventActivity entity = eventActivityRepository.findById(id).orElse(null);
                 return entity;
             }
             case EVENT_DIRECTIVE: {
-                Long id = Long.parseLong(identifier);
+                Long id = Long.parseLong(indentifier);
                 EventDirective entity = eventDirectiveRepository.findById(id).orElse(null);
                 return entity;
             }
             case TEMPLATE_ACTIVITY: {
-                Long id = Long.parseLong(identifier);
+                Long id = Long.parseLong(indentifier);
                 TemplateActivity entity = templateActivityRepository.findById(id).orElse(null);
                 return entity;
             }
             case TEMPLATE_ACTIVITY_ACTIVATOR: {
-                Long id = Long.parseLong(identifier);
+                Long id = Long.parseLong(indentifier);
                 TemplateActivityActivator entity = templateActivityActivatorRepository.findById(id).orElse(null);
                 return entity;
             }
             case TEMPLATE_FLOW: {
-                Long id = Long.parseLong(identifier);
+                Long id = Long.parseLong(indentifier);
                 TemplateFlow entity = templateFlowRepository.findById(id).orElse(null);
                 return entity;
             }

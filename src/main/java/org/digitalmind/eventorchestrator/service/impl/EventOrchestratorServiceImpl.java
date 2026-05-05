@@ -13,6 +13,7 @@ import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
 import org.digitalmind.buildingblocks.core.beanutils.service.SpringBeanUtil;
+import org.digitalmind.buildingblocks.core.jpautils.entity.IdModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdModel;
 import org.digitalmind.buildingblocks.core.requestcontext.dto.RequestContext;
 import org.digitalmind.buildingblocks.core.requestcontext.service.RequestContextService;
@@ -458,8 +459,9 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         eventMemoRequest.setContext(context);
         eventMemoRequest.setVisibility(eventMemoRequest.getVisibility() != null ? eventMemoRequest.getVisibility() : EventVisibility.ADMIN);
         if (eventMemoRequest.getPartitionKey() == null) {
+            String processIdentifier = PartitionedIdModel.calcIdentifier(eventMemoRequest.getPartitionKey(), eventMemoRequest.getProcessId());
             EventOrchestratorProcess resolved =
-                    (EventOrchestratorProcess) getEntity(eventMemoRequest.getProcessName(), eventMemoRequest.getProcessId());
+                    (EventOrchestratorProcess) getEntity(eventMemoRequest.getProcessName(), processIdentifier);
             eventMemoRequest.setPartitionKey(resolveProcessPartitionKey(resolved));
         }
         return eventMemoService.save(eventMemoRequest);
@@ -479,6 +481,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         eventActivityRequest.setVisibility(eventActivityRequest.getVisibility() != null ? eventActivityRequest.getVisibility() : EventVisibility.ADMIN);
         return eventActivityService.save(eventActivityRequest);
     }
+
 
     public void triggerEventActivities(RequestContext requestContext, Integer processPartitionKey, Long processId, String processName, Long parentMemoId, String code, String status, Object trigger) {
         requestContext = getOrDefault(requestContext);
@@ -527,7 +530,8 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         if (trigger instanceof EventOrchestratorProcess && processId == ((EventOrchestratorProcess) trigger).getId()) {
             process = (EventOrchestratorProcess) trigger;
         } else {
-            process = (EventOrchestratorProcess) getEntity(processName, processId);
+            String processIdentifier = PartitionedIdModel.calcIdentifier(processPartitionKey, processId);
+            process = (EventOrchestratorProcess) getEntity(processName, processIdentifier);
         }
         String flowTemplate = (process != null) ? process.getFlowTemplate() : "N/A";
 
@@ -889,9 +893,9 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
     }
 
     @Override
-    public Object getEntity(String name, Object id) {
-        String entityId = (id != null) ? String.valueOf(id) : null;
-        return eventOrchestratorPluginRegistry.getPluginFor(name).map(p -> p.getEntity(name, entityId)).orElse(null);
+    public Object getEntity(String name, Object identifier) {
+        String entityIdentifier = (identifier != null) ? String.valueOf(identifier) : null;
+        return eventOrchestratorPluginRegistry.getPluginFor(name).map(p -> p.getEntity(name, entityIdentifier)).orElse(null);
     }
 
     private String unproxyClassName(String className) {
@@ -1003,9 +1007,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         if (entityId == null || entityName == null) {
             return entityId;
         }
-        if (entityId.contains(":")) {
-            return entityId;
-        }
+
         String n = unproxyClassName(entityName);
         if (EventMemo.class.getSimpleName().equals(n) || EventMemo.class.getCanonicalName().equals(n)) {
             if (process == null) {
@@ -1013,7 +1015,16 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                         "EventMemo entity load requires process context to supply partition_key when entity_id is not composite (<partitionKey>:<memoId>)"
                 );
             }
-            return resolveProcessPartitionKey(process) + ":" + entityId;
+            if (IdModel.isValidIdentifier(entityId, Long.class)) {
+                Integer partitionKey = resolveProcessPartitionKey(process);
+                return PartitionedIdModel.calcIdentifier(partitionKey, entityId);
+            }
+            if (PartitionedIdModel.isValidIdentifier(entityId, Integer.class, Long.class)) {
+                return entityId.trim();
+            }
+        }
+        if (entityId.contains(":")) {
+            return entityId;
         }
         return entityId;
     }

@@ -21,17 +21,17 @@ public abstract class EventOrchestratorAbstractEntityPlugin implements EventOrch
         return supportsInternal(name);
     }
 
-    protected abstract Object getEntityInternal(String name, String id);
+    protected abstract Object getEntityInternal(String name, String indentifier);
 
     @Override
-    public final Object getEntity(String name, String id) {
+    public final Object getEntity(String name, String identifier) {
         if (!supports(name)) {
             throw new EventOrchestratorFatalException("The <" + this.getClass().getSimpleName() + "> does not support entity type <" + String.valueOf(name) + ">");
         }
-        if (id == null) {
+        if (identifier == null) {
             return null;
         }
-        return getEntityInternal(name, id);
+        return getEntityInternal(name, identifier);
     }
 
     @Override

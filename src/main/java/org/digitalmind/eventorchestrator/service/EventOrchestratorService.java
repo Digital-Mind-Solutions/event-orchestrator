@@ -24,7 +24,7 @@ public interface EventOrchestratorService extends IService {
 
     public Map<String, Object> createParameters(Object... items);
 
-    Object getEntity(String name, Object id);
+    Object getEntity(String name, Object identifier);
 
     String getEntityAlias(String name);
 
