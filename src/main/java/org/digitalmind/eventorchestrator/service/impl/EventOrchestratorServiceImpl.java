@@ -493,7 +493,16 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             ((Collection) trigger).forEach(triggerItem -> triggerEventActivities(finalRequestContext, processPartitionKey, processId, finalProcessName, parentMemoId, finalCode, status, triggerItem));
             return;
         }
-        log.info("triggerEventActivities requestContext={}, processPartitionKey={}, processId={}, processName={}, parentMemoId={}, code={}, status={}, trigger={}", requestContext, processPartitionKey, processId, processName, parentMemoId, code, status, trigger.getClass().getSimpleName());
+        log.info("triggerEventActivities requestContext={}, processPartitionKey={}, processId={}, processName={}, parentMemoId={}, code={}, status={}, trigger={}", requestContext, processPartitionKey, processId, processName, parentMemoId, code, status, trigger != null ? trigger.getClass().getSimpleName() : null);
+        log.debug(
+                "[RCA-EO] triggerEventActivities triggerFingerprint={}, requestContextId={}, processPartitionKey={}, processId={}, code={}, status={}",
+                describeObjectIdentity(trigger),
+                requestContext != null ? requestContext.getId() : null,
+                processPartitionKey,
+                processId,
+                code,
+                status
+        );
         List<EventActivity> asyncEventActivityList = new ArrayList<EventActivity>();
         List<EventActivity> syncEventActivityList = new ArrayList<EventActivity>();
         ConcurrentHashMap<String, Object> taaContextMap = new ConcurrentHashMap<>();
@@ -700,6 +709,12 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                 }
             }
         }
+        log.debug(
+                "[RCA-EO] triggerEventActivities preSave asyncCount={} syncCount={} triggerFingerprint={}",
+                asyncEventActivityList.size(),
+                syncEventActivityList.size(),
+                describeObjectIdentity(trigger)
+        );
         eventActivityService.saveAll(asyncEventActivityList);
         RequestContext finalRequestContext1 = requestContext;
         List<EventMemo> eventMemoList = syncEventActivityList.stream()
@@ -713,6 +728,28 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                 })
                 .collect(Collectors.toList());
         eventMemoService.saveAll(eventMemoList);
+    }
+
+    private String describeObjectIdentity(Object value) {
+        if (value == null) {
+            return "null";
+        }
+        return value.getClass().getName() +
+                "@ih=" + System.identityHashCode(value) +
+                ",id=" + extractPropertySafely(value, "id") +
+                ",key=" + extractPropertySafely(value, "key") +
+                ",partitionKey=" + extractPropertySafely(value, "partitionKey") +
+                ",processId=" + extractPropertySafely(value, "processId");
+    }
+
+    private Object extractPropertySafely(Object value, String propertyName) {
+        try {
+            String getterName = "get" + propertyName.substring(0, 1).toUpperCase(Locale.ROOT) + propertyName.substring(1);
+            java.lang.reflect.Method getter = value.getClass().getMethod(getterName);
+            return getter.invoke(value);
+        } catch (Exception ignored) {
+            return "n/a";
+        }
     }
 
     @Override

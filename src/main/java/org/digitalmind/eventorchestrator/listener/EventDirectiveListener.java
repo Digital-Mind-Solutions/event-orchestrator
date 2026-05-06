@@ -5,6 +5,7 @@ import org.hibernate.event.service.spi.EventListenerRegistry;
 import org.hibernate.event.spi.*;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.hibernate.persister.entity.EntityPersister;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -13,6 +14,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManagerFactory;
 
 @Component
+@Slf4j
 public class EventDirectiveListener implements
 
         PreCollectionRecreateEventListener, PostCollectionRecreateEventListener,
@@ -76,6 +78,12 @@ public class EventDirectiveListener implements
 
     @Override
     public void onPostInsert(PostInsertEvent event) {
+        log.debug(
+                "[RCA-EO] onPostInsert entityName={}, entityClass={}, id={}",
+                event != null && event.getPersister() != null ? event.getPersister().getEntityName() : null,
+                event != null && event.getEntity() != null ? event.getEntity().getClass().getName() : null,
+                event != null ? event.getId() : null
+        );
         eventDirectiveService.onPostInsert(event);
     }
 
