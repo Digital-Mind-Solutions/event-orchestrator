@@ -459,7 +459,8 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         eventMemoRequest.setContext(context);
         eventMemoRequest.setVisibility(eventMemoRequest.getVisibility() != null ? eventMemoRequest.getVisibility() : EventVisibility.ADMIN);
         if (eventMemoRequest.getPartitionKey() == null) {
-            String processIdentifier = PartitionedIdModel.calcIdentifier(eventMemoRequest.getPartitionKey(), eventMemoRequest.getProcessId());
+            //TODO: review this
+            String processIdentifier = buildProcessLookupIdentifier(null, eventMemoRequest.getProcessId());
             EventOrchestratorProcess resolved =
                     (EventOrchestratorProcess) getEntity(eventMemoRequest.getProcessName(), processIdentifier);
             eventMemoRequest.setPartitionKey(resolveProcessPartitionKey(resolved));
@@ -479,6 +480,15 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         context.putAll(requestContext.getDetails());
         eventActivityRequest.setContext(context);
         eventActivityRequest.setVisibility(eventActivityRequest.getVisibility() != null ? eventActivityRequest.getVisibility() : EventVisibility.ADMIN);
+        if (eventActivityRequest.getProcessPartitionKey() == null
+                && eventActivityRequest.getProcessId() != null
+                && eventActivityRequest.getProcessName() != null) {
+            //TODO: review this
+            String processIdentifier = buildProcessLookupIdentifier(null, eventActivityRequest.getProcessId());
+            EventOrchestratorProcess resolved =
+                    (EventOrchestratorProcess) getEntity(eventActivityRequest.getProcessName(), processIdentifier);
+            eventActivityRequest.setProcessPartitionKey(resolveProcessPartitionKey(resolved));
+        }
         return eventActivityService.save(eventActivityRequest);
     }
 
@@ -539,9 +549,12 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         if (trigger instanceof EventOrchestratorProcess && processId == ((EventOrchestratorProcess) trigger).getId()) {
             process = (EventOrchestratorProcess) trigger;
         } else {
-            String processIdentifier = PartitionedIdModel.calcIdentifier(processPartitionKey, processId);
+            String processIdentifier = buildProcessLookupIdentifier(processPartitionKey, processId);
             process = (EventOrchestratorProcess) getEntity(processName, processIdentifier);
         }
+        Integer effectiveProcessPartitionKey = processPartitionKey != null
+                ? processPartitionKey
+                : resolveProcessPartitionKey(process);
         String flowTemplate = (process != null) ? process.getFlowTemplate() : "N/A";
 
         if (flowTemplate == null) {
@@ -578,8 +591,9 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             taaContextMap.put(triggerBeanName, trigger);
             taaContextMap.put("trigger", trigger);
         }
-        if (processPartitionKey != null) {
-            taaContextMap.put("processPartitionKey", processPartitionKey);
+        if (effectiveProcessPartitionKey != null) {
+            taaContextMap.put("processPartitionKey", effectiveProcessPartitionKey);
+            taaContextMap.put("partitionKey", effectiveProcessPartitionKey);
         }
         if (processId != null) {
             taaContextMap.put("processId", processId);
@@ -777,7 +791,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                     .contextId(eventActivity.getContextId())
             ;
 
-            String processIdentifier = PartitionedIdModel.calcIdentifier(eventActivity.getProcessPartitionKey(), eventActivity.getProcessId());
+            String processIdentifier = buildProcessLookupIdentifier(eventActivity.getProcessPartitionKey(), eventActivity.getProcessId());
             process = (EventOrchestratorProcess) getEntity(eventActivity.getProcessName(), processIdentifier);
 
 
@@ -1023,6 +1037,21 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         }
 
         return eventRetryPolicy;
+    }
+
+    /**
+     * Builds the string passed to {@link #getEntity(String, Object)} for process load:
+     * composite {@code partitionKey:processId} when partition is known, otherwise plain {@code processId}
+     * (plugins may resolve via get-by-id fallback).
+     */
+    private static String buildProcessLookupIdentifier(Integer partitionKey, Long processId) {
+        if (processId == null) {
+            return null;
+        }
+        if (partitionKey != null) {
+            return PartitionedIdModel.calcIdentifier(partitionKey, processId);
+        }
+        return String.valueOf(processId);
     }
 
     private static Integer resolveProcessPartitionKey(EventOrchestratorProcess process) {

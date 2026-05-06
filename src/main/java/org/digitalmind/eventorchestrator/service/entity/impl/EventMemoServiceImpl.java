@@ -2,7 +2,6 @@ package org.digitalmind.eventorchestrator.service.entity.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.digitalmind.eventorchestrator.entity.EventMemo;
-import org.digitalmind.eventorchestrator.entity.EventMemoId;
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
 import org.digitalmind.eventorchestrator.repository.EventMemoRepository;
 import org.digitalmind.eventorchestrator.service.entity.EventMemoService;
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 @Service("processMemoService")
@@ -29,9 +27,8 @@ public class EventMemoServiceImpl implements EventMemoService {
     }
 
     @Override
-    public EventMemo findById(EventMemoId eventMemoId) {
-        Optional<EventMemo> memo = this.eventMemoRepository.findById(eventMemoId);
-        return memo.isPresent() ? (EventMemo) memo.get() : null;
+    public EventMemo findByPartitionKeyAndId(Integer partitionKey, Long id) {
+        return eventMemoRepository.findByPartitionKeyAndId(partitionKey, id).orElse(null);
     }
 
     @Override

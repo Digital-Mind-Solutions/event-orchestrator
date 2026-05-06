@@ -74,8 +74,7 @@ public class EventOrchestratorInternalEntityPlugin extends EventOrchestratorAbst
 
             case EVENT_MEMO: {
                 EventMemoId key = EventMemoId.fromIdentifier(indentifier);
-                EventMemo entity = eventMemoService.findById(key);
-                return entity;
+                return eventMemoService.findByPartitionKeyAndId(key.getPartitionKey(), key.getId());
             }
             case EVENT_ACTIVITY: {
                 Long id = Long.parseLong(indentifier);

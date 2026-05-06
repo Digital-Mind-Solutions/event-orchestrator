@@ -1,7 +1,6 @@
 package org.digitalmind.eventorchestrator.repository;
 
 import org.digitalmind.eventorchestrator.entity.EventMemo;
-import org.digitalmind.eventorchestrator.entity.EventMemoId;
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,10 +9,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
 import java.util.Set;
 
 @Repository
-public interface EventMemoRepository extends JpaRepository<EventMemo, EventMemoId> {
+public interface EventMemoRepository extends JpaRepository<EventMemo, Long> {
+
+    Optional<EventMemo> findByPartitionKeyAndId(Integer partitionKey, Long id);
 
     EventMemo getByPartitionKeyAndContextId(Integer partitionKey, String contextId);
 
@@ -21,7 +23,7 @@ public interface EventMemoRepository extends JpaRepository<EventMemo, EventMemoI
 
     @Query(
             "SELECT EM FROM EventMemo EM " +
-                    "WHERE EM.key.partitionKey = :partitionKey " +
+                    "WHERE EM.partitionKey = :partitionKey " +
                     "  AND EM.processId = :processId " +
                     "  AND (:privacyId IS NULL OR EM.privacyId IS NULL OR EM.privacyId = :privacyId) " +
                     "  AND (EM.visibility IN :eventVisibilitySet) " +

@@ -1,44 +1,35 @@
 package org.digitalmind.eventorchestrator.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdCreateModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdModel;
 
 import java.io.Serializable;
 
-@Embeddable
+/**
+ * Valoare de identificare logică (parsare din string {@code partitionKey~id}, delimiter {@link PartitionedIdModel#PARTITION_KEY_DELIMITER}); nu {@code @IdClass}.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class EventMemoId implements PartitionedIdModel<Integer, Long>, PartitionedIdCreateModel<Integer, Long, EventMemoId>, Serializable {
+public class EventMemoId implements Serializable, PartitionedIdModel<Integer, Long> {
+
     private static final long serialVersionUID = 1L;
 
-    @Column(name = "partition_key", nullable = false)
-    private Integer partitionKey;
-
-    @Column(name = "id", nullable = false)
     private Long id;
 
+    private Integer partitionKey;
+
     public static EventMemoId of(Integer partitionKey, Long id) {
-        return new EventMemoId(partitionKey, id);
+        return new EventMemoId(id, partitionKey);
     }
 
     public static EventMemoId fromIdentifier(String identifier) {
         return PartitionedIdModel.fromString(
                 identifier,
-                (partitionKey, id) ->
-                        new EventMemoId(Integer.parseInt(partitionKey), Long.parseLong(id)
-                        )
+                (pk, memoId) ->
+                        new EventMemoId(Long.parseLong(memoId), Integer.parseInt(pk))
         );
     }
-
-    @Override
-    public EventMemoId createKey(Integer partitionKey, Long id) {
-        return of(partitionKey, id);
-    }
-
 }

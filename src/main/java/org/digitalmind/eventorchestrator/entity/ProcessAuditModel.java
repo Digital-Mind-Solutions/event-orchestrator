@@ -1,6 +1,11 @@
 package org.digitalmind.eventorchestrator.entity;
 
 public interface ProcessAuditModel {
-    //TODO add getPartitionKey ????
+
     Long getProcessId();
+
+    /**
+     * Partition key of the owning process (when the audited entity is partition-scoped).
+     */
+    Integer getPartitionKey();
 }

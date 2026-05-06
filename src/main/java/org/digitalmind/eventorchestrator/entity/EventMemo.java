@@ -1,29 +1,29 @@
 package org.digitalmind.eventorchestrator.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.digitalmind.buildingblocks.core.jpautils.entity.ContextVersionableAuditModel;
-import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdCreateModel;
 import org.digitalmind.buildingblocks.core.jpautils.entity.PartitionedIdModel;
-import org.digitalmind.buildingblocks.core.jpautils.entity.generator.PartitionAwareIdModel;
-import org.digitalmind.buildingblocks.core.jpautils.entity.generator.PartitionedIdCreateTableId;
 import org.digitalmind.eventorchestrator.converter.JpaMapJsonConverter;
 import org.digitalmind.eventorchestrator.enumeration.EventActivityType;
 import org.digitalmind.eventorchestrator.enumeration.EventMemoStatus;
 import org.digitalmind.eventorchestrator.enumeration.EventVisibility;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.PartitionKey;
 import org.hibernate.type.SqlTypes;
-import org.springframework.data.domain.Persistable;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.Map;
 
 import static org.digitalmind.eventorchestrator.entity.EventMemo.*;
 
+/**
+ * Model logic: {@link #id} (unic în mapare JPA) + {@link #partitionKey} ca coloană mapată explicită.
+ * PK-ul fizic din DB poate rămâne compus; fără validare Hibernate a schemei, maparea nu trebuie să reflecte forma PK în metadate.
+ */
 @Entity
 @Table(
         name = TABLE_NAME,
@@ -52,8 +52,7 @@ import static org.digitalmind.eventorchestrator.entity.EventMemo.*;
 @Schema(description = "Process memo")
 @ToString(callSuper = true)
 public class EventMemo extends ContextVersionableAuditModel implements ProcessAuditModel,
-        PartitionedIdModel<Integer, Long>, Persistable<Long>, PartitionAwareIdModel<Integer, Long>,
-        PartitionedIdCreateModel<Integer, Long, EventMemoId> {
+        PartitionedIdModel<Integer, Long> {
 
     static final String TABLE_NAME = "process_memo";
     static final String TABLE_SHORT_NAME = "pr_memo";
@@ -63,17 +62,16 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     static final String TABLE_IX_PARTITION_PROCESS_ID = TABLE_SHORT_NAME + "_ixpkprcid";
     static final String TABLE_IX_PARTITION_CONTEXT_ID = TABLE_SHORT_NAME + "_ixpkctxid";
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
+    @Schema(description = "Id memo (generat; unic în mapare JPA)")
+    private Long id;
 
-    @EmbeddedId
-    @PartitionedIdCreateTableId(
-            table = "seq_" + TABLE_NAME,
-            pkColumnName = "sequence_name",
-            valueColumnName = "next_val",
-            pkColumnValue = "seq_" + TABLE_NAME,
-            allocationSize = 50,
-            initialValue = 1
-    )
-    private EventMemoId key;
+    @PartitionKey
+    @Column(name = "partition_key", nullable = false)
+    @Schema(description = "Cheie de partiție proces (coloană mapată; folosită la prune / identifier)")
+    private Integer partitionKey;
 
     @Schema(description = "The name of the process")
     @Column(name = "process_name", length = 500)
@@ -81,7 +79,6 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
 
     @Schema(description = "The id of the process")
     @Column(name = "process_id")
-    //@NonNull
     private Long processId;
 
     @Schema(description = "The id of the parent memo (if applicable)")
@@ -143,67 +140,4 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     @Schema(description = "The privacy id")
     @Column(name = "privacy_id")
     private Long privacyId;
-
-    /**
-     * Partition key supplied before {@link #key} exists. Does not allocate {@link EventMemoId}; keeps
-     * {@code key == null} until the id generator runs. {@link #getPartitionKey()} reads this when
-     * {@code key} is null or has no partition yet; {@link #calcPartitionKey(Long)} delegates to
-     * {@link #getPartitionKey()} so {@link PartitionedIdCreateTableId} picks up the same value.
-     */
-    @Transient
-    @JsonIgnore
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    @Getter(AccessLevel.NONE)
-    @Setter(AccessLevel.NONE)
-    private Integer partitionKeyStaging;
-
-    @Override
-    @Transient
-    @JsonIgnore
-    public boolean isNew() {
-        return getId() == null;
-    }
-
-    @Override
-    public Integer calcPartitionKey(Long id) {
-        return this.getPartitionKey();
-    }
-
-    @Override
-    @Transient
-    public Integer getPartitionKey() {
-        if (key != null && key.getPartitionKey() != null) {
-            return key.getPartitionKey();
-        }
-        if (partitionKeyStaging != null) {
-            return partitionKeyStaging;
-        }
-        return null;
-    }
-
-    @Override
-    @Transient
-    public void setPartitionKey(Integer partitionKey) {
-        if (key != null) {
-            key.setPartitionKey(partitionKey);
-            partitionKeyStaging = null;
-            return;
-        }
-        partitionKeyStaging = partitionKey;
-    }
-
-    @Override
-    @Transient
-    public Long getId() {
-        return key != null ? key.getId() : null;
-    }
-
-    @Override
-    public EventMemoId createKey(Integer partitionKey, Long id) {
-        Integer resolvedPartitionKey = (partitionKey != null) ? partitionKey : calcPartitionKey(id);
-        EventMemoId createdId = EventMemoId.of(resolvedPartitionKey, id);
-        return createdId;
-    }
-
 }
