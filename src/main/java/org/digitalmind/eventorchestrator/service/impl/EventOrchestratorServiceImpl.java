@@ -62,6 +62,7 @@ import static org.digitalmind.eventorchestrator.config.EventOrchestratorModuleCo
 public class EventOrchestratorServiceImpl implements EventOrchestratorService {
 
     private final static String EVENT_RETRY_DEFAULT_CODE = "DEFAULT";
+    private static final int STATUS_DESCRIPTION_MAX_LENGTH = 4000;
 
     private EventOrchestratorService self;
 
@@ -874,6 +875,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             String statusDescription = "";
             statusDescription = statusDescription + e.getLocalizedMessage();
             statusDescription = statusDescription + "; " + exceptionCause.getMessage();
+            statusDescription = truncateStatusDescription(statusDescription);
 
             processMemoBuilder.status(EventMemoStatus.ERROR);
             processMemoBuilder.statusDescription(statusDescription);
@@ -1062,6 +1064,15 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             }
         }
         return null;
+    }
+
+    private static String truncateStatusDescription(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.length() > STATUS_DESCRIPTION_MAX_LENGTH
+                ? value.substring(0, STATUS_DESCRIPTION_MAX_LENGTH)
+                : value;
     }
 
     /**

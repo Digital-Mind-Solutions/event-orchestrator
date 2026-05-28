@@ -137,6 +137,7 @@ import static org.digitalmind.eventorchestrator.entity.EventActivity.*;
 @Schema(description = "Process activity.")
 @ToString(callSuper = true)
 public class EventActivity extends ContextVersionableAuditModel implements IdModel<Long> {
+    private static final int STATUS_DESCRIPTION_MAX_LENGTH = 4000;
 
     public static final String TABLE_NAME = "process_activity";
     static final String TABLE_SHORT_NAME = "pr_actv";
@@ -285,6 +286,19 @@ public class EventActivity extends ContextVersionableAuditModel implements IdMod
         if (this.retryDate == null) {
             this.retryDate = plannedDate;
         }
+    }
+
+    public void setStatusDescription(String statusDescription) {
+        this.statusDescription = truncateStatusDescription(statusDescription);
+    }
+
+    private static String truncateStatusDescription(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.length() > STATUS_DESCRIPTION_MAX_LENGTH
+                ? value.substring(0, STATUS_DESCRIPTION_MAX_LENGTH)
+                : value;
     }
 
     @PrePersist

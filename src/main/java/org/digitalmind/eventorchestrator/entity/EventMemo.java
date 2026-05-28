@@ -53,6 +53,7 @@ import static org.digitalmind.eventorchestrator.entity.EventMemo.*;
 @ToString(callSuper = true)
 public class EventMemo extends ContextVersionableAuditModel implements ProcessAuditModel,
         PartitionedIdModel<Integer, Long> {
+    private static final int STATUS_DESCRIPTION_MAX_LENGTH = 4000;
 
     static final String TABLE_NAME = "process_memo";
     static final String TABLE_SHORT_NAME = "pr_memo";
@@ -140,4 +141,17 @@ public class EventMemo extends ContextVersionableAuditModel implements ProcessAu
     @Schema(description = "The privacy id")
     @Column(name = "privacy_id")
     private Long privacyId;
+
+    public void setStatusDescription(String statusDescription) {
+        this.statusDescription = truncateStatusDescription(statusDescription);
+    }
+
+    private static String truncateStatusDescription(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.length() > STATUS_DESCRIPTION_MAX_LENGTH
+                ? value.substring(0, STATUS_DESCRIPTION_MAX_LENGTH)
+                : value;
+    }
 }
