@@ -1,1 +1,23 @@
+pluginManagement {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+        maven {
+            name = 'digitalmind'
+            url = uri('https://maven.pkg.github.com/Digital-Mind-Solutions/maven-repository')
+            credentials {
+                // Settings has no findProperty — use providers (gradle.properties / env).
+                username = settings.providers.gradleProperty('dm.ghub.user')
+                        .orElse(settings.providers.environmentVariable('DM_GITHUB_USER'))
+                        .getOrElse('')
+                password = settings.providers.gradleProperty('dm.ghub.key')
+                        .orElse(settings.providers.environmentVariable('DM_GITHUB_TOKEN'))
+                        .getOrElse('')
+            }
+        }
+    }
+    // Plugin version = gradle.properties dmsal_license_version (= Git tag v{ver} + folder v{ver}/).
+}
+
 rootProject.name = 'event-orchestrator'

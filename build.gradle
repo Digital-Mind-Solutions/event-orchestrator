@@ -3,6 +3,8 @@ plugins {
     id 'org.springframework.boot' version '4.0.3'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'maven-publish'
+    // version = gradle.properties dmsal_license_version (same as Git dmsal-license tag / v*/ folder)
+    id 'org.digitalmind.dmsal-license' version "${dmsal_license_version}"
 }
 group = 'org.digitalmind'
 version = '4.0.0'
@@ -23,9 +25,15 @@ tasks.withType(JavaCompile).configureEach {
 bootJar {
     enabled = false
 }
+
+dmsalLicense {
+    packageIntoJar = true
+}
+
 jar {
     archiveBaseName = "event-orchestrator"
     enabled = true
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 repositories {
