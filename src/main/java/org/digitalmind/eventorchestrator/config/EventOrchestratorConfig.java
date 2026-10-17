@@ -7,6 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
@@ -36,8 +37,7 @@ public class EventOrchestratorConfig {
         private EventOrchestratorPollConfiguration serialProcess;
         private EventOrchestratorPollConfiguration serialEntity;
         private EventOrchestratorPollConfiguration heartbeat;
-        private EventOrchestratorPollConfiguration orphan;
-
+        private EventOrchestratorOrphanConfiguration orphan;
     }
 
     @Data
@@ -47,5 +47,17 @@ public class EventOrchestratorConfig {
         private long schedulerPeriod;
         private TimeUnit schedulerUnit;
         private int schedulerCapacityThreshold;
+    }
+
+    @Data
+    @EqualsAndHashCode(callSuper = true)
+    public static class EventOrchestratorOrphanConfiguration extends EventOrchestratorPollConfiguration {
+        private EventOrchestratorRecycleConfiguration recycle;
+    }
+
+    @Data
+    public static class EventOrchestratorRecycleConfiguration {
+        // default 0s = disabled; enable with a positive duration (e.g. 60m)
+        private Duration oldQueueDuration = Duration.ZERO;
     }
 }

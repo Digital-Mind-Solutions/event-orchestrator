@@ -37,6 +37,7 @@ public abstract class EventMemoMapper implements IMapper {
         return toDTO(eventMemo, mappingContext, 1);
     }
 
+    @SuppressWarnings("unchecked")
     public EventMemoDTO toDTO(EventMemo eventMemo, @Context MappingContext mappingContext, @Context int level) {
         if (eventMemo == null) {
             return null;

@@ -116,6 +116,11 @@ public class EventActivityService implements IService {
         return eventActivityRepository.saveAll(eventActivities);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<EventActivity> findByIdReadOnly(Long id) {
+        return eventActivityRepository.findById(id);
+    }
+
     @Transactional
     public List<EventActivity> findAllWithExecutionTypeParallel(Date plannedDate, Date retryDate, Pageable pageable) {
         List<EventActivity> eventActivityList = new ArrayList<>();
@@ -183,12 +188,21 @@ public class EventActivityService implements IService {
         return eventActivityRepository.findAllByProcessIdAndVisibleAndPrivacyId(processId, eventVisibilitySet, privacyId, pageRequest);
     }
 
+    //--- requeue utils
+    private void updateEventActivityRequeue(EventActivity eventActivity, Date date, String executionNode) {
+        eventActivity.setStatus(EventActivityStatus.PENDING_RETRY);
+        eventActivity.setRetryDate(date);
+        eventActivity.setExecutionNode(executionNode);
+    }
+
+    private void updateEventActivityRequeue(EventActivity eventActivity, Date date) {
+       updateEventActivityRequeue(eventActivity, date, hostUtilService.getHostname());
+    }
+
     @Transactional
     public void requeue(List<EventActivity> eventActivityList, Date date) {
         eventActivityList.forEach(eventActivity -> {
-            eventActivity.setStatus(EventActivityStatus.PENDING_RETRY);
-            eventActivity.setRetryDate(date);
-            eventActivity.setExecutionNode(hostUtilService.getHostname());
+            updateEventActivityRequeue(eventActivity, date);
         });
         eventActivityRepository.saveAll(eventActivityList);
     }
@@ -200,9 +214,7 @@ public class EventActivityService implements IService {
 
     @Transactional
     public void requeue(EventActivity eventActivity, Date date) {
-        eventActivity.setStatus(EventActivityStatus.PENDING_RETRY);
-        eventActivity.setRetryDate(date);
-        eventActivity.setExecutionNode(hostUtilService.getHostname());
+        updateEventActivityRequeue(eventActivity, date);
         eventActivityRepository.save(eventActivity);
     }
 
@@ -219,16 +231,41 @@ public class EventActivityService implements IService {
         }
     }
 
-    @Transactional
-    public void requeueOrphans(int size) {
-        Pageable pageable = PageRequest.of(0, size);
-        List<EventActivity> eventActivityList = eventActivityRepository.findOrphanQueuedEntity(pageable);
+
+    //--- orphan utils
+
+
+    private int markQueuedAsPendingRetry(List<EventActivity> eventActivityList) {
+        if (eventActivityList.isEmpty()) {
+            return 0;
+        }
+        Date now = new Date();
         eventActivityList.forEach(eventActivity -> {
-            eventActivity.setStatus(EventActivityStatus.PENDING_RETRY);
-            eventActivity.setRetryDate(new Date());
-            eventActivity.setExecutionNode(null);
+            updateEventActivityRequeue(eventActivity, now, null);
+
         });
         eventActivityRepository.saveAll(eventActivityList);
+        return eventActivityList.size();
+    }
+
+    @Transactional
+    public int requeueOrphanQueuedWithDeadNode(int size) {
+        if (size <= 0) {
+            return 0;
+        }
+        Pageable pageable = PageRequest.of(0, size);
+        List<EventActivity> eventActivityList = eventActivityRepository.findOrphanQueuedWithDeadNode(pageable);
+        return markQueuedAsPendingRetry(eventActivityList);
+    }
+
+    @Transactional
+    public int requeueOrphanOldQueuedWithActiveNode(int size, Date oldQueuedBefore) {
+        if (size <= 0 || oldQueuedBefore == null) {
+            return 0;
+        }
+        Pageable pageable = PageRequest.of(0, size);
+        List<EventActivity> eventActivityList = eventActivityRepository.findOrphanOldQueuedWithActiveNode(oldQueuedBefore, pageable);
+        return markQueuedAsPendingRetry(eventActivityList);
     }
 
 }

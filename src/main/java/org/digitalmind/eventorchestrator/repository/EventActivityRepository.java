@@ -31,7 +31,7 @@ public interface EventActivityRepository extends JpaRepository<EventActivity, Lo
                     "  AND P.retryDate < :retryDate " +
                     "ORDER BY P.priority, P.plannedDate, P.retryDate, P.id"
     )
-        //PARALLEL              //NO DEPENDENCY ON EXECUTION
+    //PARALLEL              //NO DEPENDENCY ON EXECUTION
     List<EventActivity> findAllWithExecutionTypeParallel(@Param("plannedDate") Date plannedDate, @Param("retryDate") Date retryDate, Pageable pageable);
 
     @Lock(LockModeType.PESSIMISTIC_FORCE_INCREMENT)
@@ -54,7 +54,7 @@ public interface EventActivityRepository extends JpaRepository<EventActivity, Lo
                     ") " +
                     "ORDER BY P.priority, P.retryDate, P.id"
     )
-        //SERIAL_PROCESS        //SERIALIZE PA WITH THE SAME PROCESS ID
+    //SERIAL_PROCESS        //SERIALIZE PA WITH THE SAME PROCESS ID
     List<EventActivity> findAllWithExecutionTypeSerialProcess(@Param("plannedDate") Date plannedDate, @Param("retryDate") Date retryDate, Pageable pageable);
 
 
@@ -80,7 +80,7 @@ public interface EventActivityRepository extends JpaRepository<EventActivity, Lo
                     ") " +
                     "ORDER BY P.priority, P.retryDate, P.id"
     )
-        //SERIAL_ENTITY,        //SERIALIZE PA WITH THE SAME PROCESS ID, ENTITY ID AND ENTITY NAME
+    //SERIAL_ENTITY,        //SERIALIZE PA WITH THE SAME PROCESS ID, ENTITY ID AND ENTITY NAME
     List<EventActivity> findAllWithExecutionTypeSerialEntity(@Param("plannedDate") Date plannedDate, @Param("retryDate") Date retryDate, Pageable pageable);
 
     @Lock(LockModeType.PESSIMISTIC_FORCE_INCREMENT)
@@ -96,8 +96,24 @@ public interface EventActivityRepository extends JpaRepository<EventActivity, Lo
                     ") " +
                     "ORDER BY P.priority, P.plannedDate, P.retryDate, P.id"
     )
-        //SERIAL_ENTITY,        //SERIALIZE PA WITH THE SAME PROCESS ID, ENTITY ID AND ENTITY NAME
-    List<EventActivity> findOrphanQueuedEntity(Pageable pageable);
+    List<EventActivity> findOrphanQueuedWithDeadNode(Pageable pageable);
+
+
+    // QUEUED vechi pe nod care încă are heartbeat (disjunct față de findOrphanQueuedWithDeadNode)
+    @Lock(LockModeType.PESSIMISTIC_FORCE_INCREMENT)
+    @Query(
+            "SELECT P FROM EventActivity P " +
+                    "WHERE P.status IN ( " +
+                    "       org.digitalmind.eventorchestrator.enumeration.EventActivityStatus.QUEUED " +
+                    "  ) " +
+                    "  AND P.updatedAt < :updatedAtBefore " +
+                    "  AND EXISTS(" +
+                    "           SELECT H FROM EventHeartbeat H " +
+                    "           WHERE H.executionNode = P.executionNode " +
+                    "  ) " +
+                    "ORDER BY P.priority, P.plannedDate, P.retryDate, P.id"
+    )
+    List<EventActivity> findOrphanOldQueuedWithActiveNode(@Param("updatedAtBefore") Date updatedAtBefore, Pageable pageable);
 
 
     Page<EventActivity> findAllByProcessId(Long processId, Pageable pageRequest);

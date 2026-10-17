@@ -40,6 +40,7 @@ import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.expression.EvaluationContext;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.plugin.core.PluginRegistry;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -63,6 +64,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
 
     private final static String EVENT_RETRY_DEFAULT_CODE = "DEFAULT";
     private static final int STATUS_DESCRIPTION_MAX_LENGTH = 4000;
+    private static final int EVENT_ORCHESTRATOR_POLLER_COUNT = 3;
 
     private EventOrchestratorService self;
 
@@ -102,7 +104,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
     private final EventOrchestratorConfig.EventOrchestratorPollConfiguration[] eventOrchestratorTaskExecutorConfiguration;
     private final ScheduledExecutorService[] scheduler;
 
-    private final ConcurrentLinkedQueue<EventActivity> errorEventActivityQueue;
+    private final ConcurrentLinkedQueue<EventActivity>[] errorEventActivityQueue;
 
 
     @SuperBuilder
@@ -115,6 +117,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
     }
 
     @Autowired
+    @SuppressWarnings("unchecked")
     public EventOrchestratorServiceImpl(
             EventOrchestratorConfig config,
             @Qualifier(EVENT_ORCHESTRATOR_PLUGIN_REGISTRY) PluginRegistry<EventOrchestratorEntityPlugin, String>
@@ -205,12 +208,12 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                 .build(taCacheLoader);
 
 
-        this.eventOrchestratorPoller = new EventOrchestratorPoller[3];
-        this.eventOrchestratorTaskExecutor = new AsyncTaskExecutor[3];
-        this.eventOrchestratorTaskExecutorConfiguration = new EventOrchestratorConfig.EventOrchestratorPollConfiguration[3];
+        this.eventOrchestratorPoller = new EventOrchestratorPoller[EVENT_ORCHESTRATOR_POLLER_COUNT];
+        this.eventOrchestratorTaskExecutor = new AsyncTaskExecutor[EVENT_ORCHESTRATOR_POLLER_COUNT];
+        this.eventOrchestratorTaskExecutorConfiguration = new EventOrchestratorConfig.EventOrchestratorPollConfiguration[EVENT_ORCHESTRATOR_POLLER_COUNT];
         this.scheduler = new ScheduledExecutorService[5];
-        this.errorEventActivityQueue = new ConcurrentLinkedQueue<>();
-        for (int i = 0; i < 3; i++) {
+        Arrays.setAll(this.errorEventActivityQueue = new ConcurrentLinkedQueue[EVENT_ORCHESTRATOR_POLLER_COUNT], i -> new ConcurrentLinkedQueue<>());
+        for (int i = 0; i < EVENT_ORCHESTRATOR_POLLER_COUNT; i++) {
             switch (i) {
                 case 0:
                     //PARALLEL
@@ -271,36 +274,77 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                         log.trace("Start scheduler [{}] db monitor", index);
                         try {
                             int remainingCapacity = this.getRemainingTaskExecutorCapacity(this.eventOrchestratorTaskExecutor[index]);
-                            if (remainingCapacity == 0) {
-                                return;
-                            }
-                            Pageable pageable = PageRequest.of(0, Math.min(remainingCapacity, this.eventOrchestratorTaskExecutorConfiguration[index].getSchedulerCapacityThreshold()));
-                            Date plannedDate = new Date();
-                            Date retryDate = plannedDate;
-                            List<EventActivity> eventActivityList = this.eventOrchestratorPoller[index].poll(plannedDate, retryDate, pageable);
-                            for (EventActivity eventActivity : eventActivityList) {
-                                RequestContext requestContext = requestContextService.create();
-                                try {
-                                    log.info("adding eventActivity id={}, code={}, active core={}, remaining capacity={}", eventActivity.getId(), eventActivity.getCode(), getActiveCount(this.eventOrchestratorTaskExecutor[index]), this.getRemainingTaskExecutorCapacity(this.eventOrchestratorTaskExecutor[index]));
-                                    CompletableFuture<EventMemo> eventMemoCompletableFuture = CompletableFuture
-                                            .supplyAsync(() -> self.executeEventActivity(requestContext, eventActivity, EventActivityExecutionMode.ASYNC), this.eventOrchestratorTaskExecutor[index])
-                                            .exceptionally(throwable -> {
-                                                eventActivity.setStatusDescription(throwable.getMessage());
-                                                errorEventActivityQueue.add(eventActivity);
-                                                return null;
-                                            });
-                                } catch (Exception e) {
-                                    eventActivity.setStatusDescription(e.getMessage());
-                                    errorEventActivityQueue.add(eventActivity);
+                            // Capacitate 0: nu claim / submit, dar tot golește coada de erori (P2).
+                            if (remainingCapacity > 0) {
+                                Pageable pageable = PageRequest.of(0, Math.min(remainingCapacity, this.eventOrchestratorTaskExecutorConfiguration[index].getSchedulerCapacityThreshold()));
+                                Date plannedDate = new Date();
+                                Date retryDate = plannedDate;
+                                List<EventActivity> eventActivityList = this.eventOrchestratorPoller[index].poll(plannedDate, retryDate, pageable);
+                                for (EventActivity eventActivity : eventActivityList) {
+                                    RequestContext requestContext = requestContextService.create();
+                                    try {
+                                        log.info("adding eventActivity id={}, version={}, code={}, processPartitionKey={}, processId={}, active core={}, remaining capacity={}", eventActivity.getId(), eventActivity.getVersion(), eventActivity.getCode(), eventActivity.getProcessPartitionKey(), eventActivity.getProcessId(), getActiveCount(this.eventOrchestratorTaskExecutor[index]), this.getRemainingTaskExecutorCapacity(this.eventOrchestratorTaskExecutor[index]));
+                                        CompletableFuture<EventMemo> eventMemoCompletableFuture = CompletableFuture
+                                                .supplyAsync(() -> self.executeEventActivity(requestContext, eventActivity, EventActivityExecutionMode.ASYNC), this.eventOrchestratorTaskExecutor[index])
+                                                .exceptionally(throwable -> {
+                                                    eventActivity.setStatusDescription(throwable.getMessage());
+                                                    errorEventActivityQueue[index].add(eventActivity);
+                                                    return null;
+                                                });
+                                    } catch (Exception e) {
+                                        eventActivity.setStatusDescription(e.getMessage());
+                                        errorEventActivityQueue[index].add(eventActivity);
+                                    }
                                 }
                             }
-                            if (errorEventActivityQueue.size() > 0) {
-                                EventActivity errorEventActivity = errorEventActivityQueue.peek();
+                            if (errorEventActivityQueue[index].size() > 0) {
+                                EventActivity errorEventActivity = errorEventActivityQueue[index].peek();
                                 while (errorEventActivity != null) {
-                                    log.info("requeue eventActivity id={}, code={}, error={}", errorEventActivity.getId(), errorEventActivity.getCode(), errorEventActivity.getStatusDescription());
-                                    this.eventOrchestratorPoller[index].requeue(errorEventActivity);
-                                    boolean removed = errorEventActivityQueue.remove(errorEventActivity);
-                                    errorEventActivity = errorEventActivityQueue.peek();
+                                    log.info("requeue eventActivity id={}, version={}, code={}, processPartitionKey={}, processId={}, error={}", errorEventActivity.getId(), errorEventActivity.getVersion(), errorEventActivity.getCode(), errorEventActivity.getProcessPartitionKey(), errorEventActivity.getProcessId(), errorEventActivity.getStatusDescription());
+                                    try {
+                                        this.eventOrchestratorPoller[index].requeue(errorEventActivity);
+                                    } catch (ObjectOptimisticLockingFailureException e) {
+                                        // save pe instanța din coadă a eșuat (version stale sau rând șters).
+                                        // Citim rândul într-o tranzacție nouă ca să decidem dacă mai avem ce requeue.
+                                        Optional<EventActivity> freshEventActivityOptional = eventActivityService.findByIdReadOnly(errorEventActivity.getId());
+                                        // Rândul nu mai există: a fost deja procesat/șters. Scoatem obiectul din coadă (remove după catch).
+                                        if (freshEventActivityOptional.isEmpty()) {
+                                            log.info("requeue skipped, activity already deleted id={}, version={}, code={}, processPartitionKey={}, processId={}", errorEventActivity.getId(), errorEventActivity.getVersion(), errorEventActivity.getCode(), errorEventActivity.getProcessPartitionKey(), errorEventActivity.getProcessId());
+                                        } else {
+                                            EventActivity freshEventActivity = freshEventActivityOptional.get();
+                                            EventActivityStatus status = freshEventActivity.getStatus();
+                                            // Încă QUEUED: nu rescriem status aici; recircularea e pe orphan (oldQueueDuration). Scoatem din coadă.
+                                            // Best-effort: păstrăm statusDescription de pe reject; dacă save pică, continuăm silent.
+                                            if (status == EventActivityStatus.QUEUED) {
+                                                try {
+                                                    if (errorEventActivity.getStatusDescription() != null) {
+                                                        freshEventActivity.setStatusDescription(errorEventActivity.getStatusDescription());
+                                                        eventActivityService.save(freshEventActivity);
+                                                    }
+                                                } catch (Exception ignored) {
+                                                    // optional plus — nu oprim tick-ul
+                                                }
+                                                if (isOldQueuedRecycleEnabled()) {
+                                                    log.info("requeue skipped, still queued, old-queue recycle on id={}, version={}, status={}, code={}, processPartitionKey={}, processId={}", freshEventActivity.getId(), freshEventActivity.getVersion(), status, freshEventActivity.getCode(), freshEventActivity.getProcessPartitionKey(), freshEventActivity.getProcessId());
+                                                } else {
+                                                    log.warn("requeue skipped, still queued, old-queue recycle off id={}, version={}, status={}, code={}, processPartitionKey={}, processId={}", freshEventActivity.getId(), freshEventActivity.getVersion(), status, freshEventActivity.getCode(), freshEventActivity.getProcessPartitionKey(), freshEventActivity.getProcessId());
+                                                }
+                                            // Deja PENDING / PENDING_RETRY: alt thread a recirculat. Nu rescriem, doar scoatem din coadă.
+                                            } else if (status == EventActivityStatus.PENDING
+                                                    || status == EventActivityStatus.PENDING_RETRY) {
+                                                log.info("requeue skipped, activity already pending id={}, version={}, status={}, code={}, processPartitionKey={}, processId={}", freshEventActivity.getId(), freshEventActivity.getVersion(), status, freshEventActivity.getCode(), freshEventActivity.getProcessPartitionKey(), freshEventActivity.getProcessId());
+                                            // Alt status (DISQUALIFIED / SUCCESS / ERROR / PARKED): nu mai e candidat de requeue.
+                                            } else {
+                                                log.info("requeue skipped, activity no longer requeueable id={}, version={}, status={}, code={}, processPartitionKey={}, processId={}", freshEventActivity.getId(), freshEventActivity.getVersion(), status, freshEventActivity.getCode(), freshEventActivity.getProcessPartitionKey(), freshEventActivity.getProcessId());
+                                            }
+                                        }
+                                    } catch (Exception e) {
+                                        // Orice altă eroare la requeue: logăm cu detalii despre activity, apoi reardăm.
+                                        log.error("requeue failed id={}, version={}, code={}, processPartitionKey={}, processId={}, status={}, error={}", errorEventActivity.getId(), errorEventActivity.getVersion(), errorEventActivity.getCode(), errorEventActivity.getProcessPartitionKey(), errorEventActivity.getProcessId(), errorEventActivity.getStatus(), e.getMessage(), e);
+                                        throw e;
+                                    }
+                                    boolean removed = errorEventActivityQueue[index].remove(errorEventActivity);
+                                    errorEventActivity = errorEventActivityQueue[index].peek();
                                 }
                             }
                             log.trace("End scheduler [{}] db monitor", index);
@@ -358,26 +402,41 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             t.setDaemon(true);
             return t;
         });
-        int size = this.config.getThreadPoolExecutor().getOrphan().getSchedulerCapacityThreshold();
+        EventOrchestratorConfig.EventOrchestratorOrphanConfiguration orphanConfiguration = this.config.getThreadPoolExecutor().getOrphan();
+        int size = orphanConfiguration.getSchedulerCapacityThreshold();
         this.scheduler[orphanIndex].scheduleAtFixedRate(() -> {
                     log.trace("Start scheduler [{}] orphan monitor", orphanIndex);
                     try {
-                        eventActivityService.requeueOrphans(size);
+                        int processed = eventActivityService.requeueOrphanQueuedWithDeadNode(size);
+                        int remaining = size - processed;
+                        if (remaining > 0 && isOldQueuedRecycleEnabled()) {
+                            Date oldQueuedBefore = Date.from(java.time.Instant.now().minus(orphanConfiguration.getRecycle().getOldQueueDuration()));
+                            eventActivityService.requeueOrphanOldQueuedWithActiveNode(remaining, oldQueuedBefore);
+                        }
                         log.trace("End scheduler [{}] orphan monitor", orphanIndex);
                     } catch (Exception e) {
                         log.error("Error scheduler [{}] orphan monitor. {}", orphanIndex, Throwables.getStackTraceAsString(e), e);
                     }
 
                 },
-                this.config.getThreadPoolExecutor().getOrphan().getSchedulerInitDelay(),
-                this.config.getThreadPoolExecutor().getOrphan().getSchedulerPeriod(),
-                this.config.getThreadPoolExecutor().getOrphan().getSchedulerUnit()
+                orphanConfiguration.getSchedulerInitDelay(),
+                orphanConfiguration.getSchedulerPeriod(),
+                orphanConfiguration.getSchedulerUnit()
         );
     }
 
     @PostConstruct
     private void init() {
         this.self = (EventOrchestratorService) springBeanUtil.getBean(EventOrchestratorService.class);
+    }
+
+    private boolean isOldQueuedRecycleEnabled() {
+        EventOrchestratorConfig.EventOrchestratorOrphanConfiguration orphan = this.config.getThreadPoolExecutor().getOrphan();
+        if (orphan == null || orphan.getRecycle() == null) {
+            return false;
+        }
+        java.time.Duration oldQueueDuration = orphan.getRecycle().getOldQueueDuration();
+        return oldQueueDuration != null && oldQueueDuration.compareTo(java.time.Duration.ZERO) > 0;
     }
 
     public int getMaxCount(AsyncTaskExecutor asyncTaskExecutor) {
@@ -494,6 +553,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
     }
 
 
+    @SuppressWarnings("unchecked")
     public void triggerEventActivities(RequestContext requestContext, Integer processPartitionKey, Long processId, String processName, Long parentMemoId, String code, String status, Object trigger) {
         requestContext = getOrDefault(requestContext);
         processName = getEntityAlias(processName);
@@ -769,8 +829,9 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
 
     @Override
     @Transactional
+    @SuppressWarnings("unchecked")
     public EventMemo executeEventActivity(RequestContext requestContext, EventActivity eventActivity, EventActivityExecutionMode executionMode) {
-        log.info("start execute EventActivity id={}, code={}, processPartitionKey={}, processId={}, executionMode={}, requestContext={}", eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessPartitionKey(), eventActivity.getProcessId(), executionMode, requestContext.getId());
+        log.info("start execute EventActivity id={}, version={}, code={}, processPartitionKey={}, processId={}, executionMode={}, requestContext={}", eventActivity.getId(), eventActivity.getVersion(), eventActivity.getCode(), eventActivity.getProcessPartitionKey(), eventActivity.getProcessId(), executionMode, requestContext.getId());
         EventMemo eventMemoResult = null;
         EventMemo.EventMemoBuilder processMemoBuilder = EventMemo.builder();
         EventOrchestratorProcess process = null;
@@ -863,8 +924,8 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                 eventActivityService.deleteById(eventActivity.getId());
             }
             log.info(
-                    "executed EventActivity id={}, code={}, processpartitionKey={}, processId={}, executionMode={}, requestContext={}",
-                    eventActivity.getId(), eventActivity.getCode(), eventActivity.getProcessPartitionKey(), eventActivity.getProcessId(), executionMode, requestContext.getId()
+                    "executed EventActivity id={}, version={}, code={}, processpartitionKey={}, processId={}, executionMode={}, requestContext={}",
+                    eventActivity.getId(), eventActivity.getVersion(), eventActivity.getCode(), eventActivity.getProcessPartitionKey(), eventActivity.getProcessId(), executionMode, requestContext.getId()
             );
         } catch (Exception e) {
             ExceptionType exceptionType = EventOrchestratorExceptionUtils.getExceptionType(e);

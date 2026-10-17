@@ -91,8 +91,8 @@ import static org.digitalmind.eventorchestrator.entity.EventActivity.*;
                         columnList = "process_id,entity_id,entity_name,execution_type,planned_date,id"
                 ),
 
-                // ORPHAN QUEUED
-                // folosit de: findOrphanQueuedEntity
+                // ORPHAN QUEUED (dead node)
+                // folosit de: findOrphanQueuedWithDeadNode
                 // filtre: status
                 // join logic: execution_node (cu heartbeat)
                 // order: priority, planned_date, retry_date, id
@@ -100,6 +100,16 @@ import static org.digitalmind.eventorchestrator.entity.EventActivity.*;
                 @Index(
                         name = TABLE_IX_ORPHAN_QUEUED,
                         columnList = "status,execution_node,priority,planned_date,retry_date,id"
+                ),
+
+                // ORPHAN OLD QUEUED (active node)
+                // folosit de: findOrphanOldQueuedWithActiveNode
+                // filtre: status (+ updated_at / EXISTS heartbeat în WHERE)
+                // order: priority, planned_date, retry_date, id
+                // scop: ORDER BY aliniat cu index → early LIMIT, fără filesort pe stoc QUEUED
+                @Index(
+                        name = TABLE_IX_ORPHAN_OLD_QUEUED,
+                        columnList = "status,priority,planned_date,retry_date,id"
                 ),
 
                 // PROCESS VISIBLE PAGE
@@ -151,6 +161,7 @@ public class EventActivity extends ContextVersionableAuditModel implements IdMod
     static final String TABLE_IX_SERIAL_ENTITY = TABLE_SHORT_NAME + "_ixserent";
 
     static final String TABLE_IX_ORPHAN_QUEUED = TABLE_SHORT_NAME + "_ixorphan";
+    static final String TABLE_IX_ORPHAN_OLD_QUEUED = TABLE_SHORT_NAME + "_ixoldq";
     static final String TABLE_IX_PROCESS_VISIBLE = TABLE_SHORT_NAME + "_ixprcvis";
 
     @Id

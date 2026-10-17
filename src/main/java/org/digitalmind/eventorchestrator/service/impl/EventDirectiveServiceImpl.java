@@ -500,6 +500,7 @@ public class EventDirectiveServiceImpl implements EventDirectiveService, Runnabl
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean contains(PostCollectionRecreateEvent event, String className) {
         Class clazz = null;
         try {
@@ -511,6 +512,7 @@ public class EventDirectiveServiceImpl implements EventDirectiveService, Runnabl
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean contains(PostCollectionRecreateEvent event, Class<?> clazz) {
         if (event != null && event.getCollection() != null && event.getCollection().getStoredSnapshot() != null && event.getCollection().getStoredSnapshot() instanceof Collection) {
             return ((Collection) event.getCollection().getStoredSnapshot()).stream().filter(o -> o != null && clazz.isInstance(o)).findAny().isPresent();
@@ -519,6 +521,7 @@ public class EventDirectiveServiceImpl implements EventDirectiveService, Runnabl
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Collection getCollection(PostCollectionRecreateEvent event, String className) {
         Class clazz = null;
         try {
@@ -530,6 +533,7 @@ public class EventDirectiveServiceImpl implements EventDirectiveService, Runnabl
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Collection getCollection(PostCollectionRecreateEvent event, Class<?> clazz) {
         if (event != null && event.getCollection() != null && event.getCollection().getStoredSnapshot() != null && event.getCollection().getStoredSnapshot() instanceof Collection) {
             return (Collection) ((Collection) event.getCollection().getStoredSnapshot()).stream().filter(o -> o != null && clazz.isInstance(o)).collect(Collectors.toList());
