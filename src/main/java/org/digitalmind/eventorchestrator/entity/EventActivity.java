@@ -302,7 +302,11 @@ public class EventActivity extends ContextVersionableAuditModel implements IdMod
     }
 
     @PrePersist
+    @PreUpdate
     public void onPrePersist() {
+        if (this.plannedDate == null) {
+            this.plannedDate = new Date();
+        }
         if (this.retryDate == null) {
             this.retryDate = this.plannedDate;
         }

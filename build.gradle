@@ -7,7 +7,7 @@ plugins {
     id 'org.digitalmind.dmsal-license' version "${dmsal_license_version}"
 }
 group = 'org.digitalmind'
-version = '4.0.0'
+version = '4.0.1'
 
 ext {
     mapstructVersion = '1.6.3'
