@@ -79,7 +79,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
     private final EventActivityService eventActivityService;
     private final EventMemoService eventMemoService;
     private final EventHeartbeatService eventHeartbeatService;
-    private final OrphanMonitorLock orphanMonitorLock;
+    private final ObjectProvider<OrphanMonitorLock> orphanMonitorLockProvider;
 
     private final RequestContextService requestContextService;
 
@@ -148,7 +148,8 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         this.eventMemoService = eventMemoService;
         //this.eventMemoRepository = eventMemoRepository;
         this.eventActivityService = eventActivityService;
-        this.orphanMonitorLock = orphanMonitorLockProvider.getIfAvailable(AlwaysRunOrphanMonitorLock::new);
+        this.orphanMonitorLockProvider = orphanMonitorLockProvider;
+        log.info("Orphan monitor lock: lazy resolve via ObjectProvider at each tick (fallback AlwaysRunOrphanMonitorLock)");
         //this.eventActivityRepository = eventActivityRepository;
         this.requestContextService = requestContextService;
         this.eventRetryService = eventRetryService;
@@ -412,6 +413,12 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         int size = orphanConfiguration.getSchedulerCapacityThreshold();
         this.scheduler[orphanIndex].scheduleAtFixedRate(() -> {
                     try {
+                        OrphanMonitorLock orphanMonitorLock =
+                                orphanMonitorLockProvider.getIfAvailable(AlwaysRunOrphanMonitorLock::new);
+                        log.debug(
+                                "Orphan monitor lock resolved for tick: type={}",
+                                orphanMonitorLock.getClass().getName()
+                        );
                         boolean executed = orphanMonitorLock.tryExecute(() -> {
                             log.trace("Start scheduler [{}] orphan monitor", orphanIndex);
                             int processed = eventActivityService.requeueOrphanQueuedWithDeadNode(size);
