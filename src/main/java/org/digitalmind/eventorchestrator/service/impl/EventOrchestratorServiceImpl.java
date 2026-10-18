@@ -31,7 +31,10 @@ import org.digitalmind.eventorchestrator.sam.EventOrchestratorPoller;
 import org.digitalmind.eventorchestrator.service.EventOrchestratorService;
 import org.digitalmind.eventorchestrator.service.EventOrchestratorServiceDependsOn;
 import org.digitalmind.eventorchestrator.service.entity.*;
+import org.digitalmind.eventorchestrator.spi.AlwaysRunOrphanMonitorLock;
+import org.digitalmind.eventorchestrator.spi.OrphanMonitorLock;
 import org.digitalmind.eventorchestrator.utils.EventOrchestratorExceptionUtils;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -76,6 +79,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
     private final EventActivityService eventActivityService;
     private final EventMemoService eventMemoService;
     private final EventHeartbeatService eventHeartbeatService;
+    private final OrphanMonitorLock orphanMonitorLock;
 
     private final RequestContextService requestContextService;
 
@@ -134,7 +138,8 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
             TemplateFlowService tfs,
             SpelService spelService,
             EventActivityService eventActivityService,
-            EventMemoService eventMemoService) {
+            EventMemoService eventMemoService,
+            ObjectProvider<OrphanMonitorLock> orphanMonitorLockProvider) {
         this.config = config;
 
         this.eventOrchestratorPluginRegistry = eventOrchestratorPluginRegistry;
@@ -143,6 +148,7 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         this.eventMemoService = eventMemoService;
         //this.eventMemoRepository = eventMemoRepository;
         this.eventActivityService = eventActivityService;
+        this.orphanMonitorLock = orphanMonitorLockProvider.getIfAvailable(AlwaysRunOrphanMonitorLock::new);
         //this.eventActivityRepository = eventActivityRepository;
         this.requestContextService = requestContextService;
         this.eventRetryService = eventRetryService;
@@ -329,11 +335,11 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
                                                 } else {
                                                     log.warn("requeue skipped, still queued, old-queue recycle off id={}, version={}, status={}, code={}, processPartitionKey={}, processId={}", freshEventActivity.getId(), freshEventActivity.getVersion(), status, freshEventActivity.getCode(), freshEventActivity.getProcessPartitionKey(), freshEventActivity.getProcessId());
                                                 }
-                                            // Deja PENDING / PENDING_RETRY: alt thread a recirculat. Nu rescriem, doar scoatem din coadă.
+                                                // Deja PENDING / PENDING_RETRY: alt thread a recirculat. Nu rescriem, doar scoatem din coadă.
                                             } else if (status == EventActivityStatus.PENDING
                                                     || status == EventActivityStatus.PENDING_RETRY) {
                                                 log.info("requeue skipped, activity already pending id={}, version={}, status={}, code={}, processPartitionKey={}, processId={}", freshEventActivity.getId(), freshEventActivity.getVersion(), status, freshEventActivity.getCode(), freshEventActivity.getProcessPartitionKey(), freshEventActivity.getProcessId());
-                                            // Alt status (DISQUALIFIED / SUCCESS / ERROR / PARKED): nu mai e candidat de requeue.
+                                                // Alt status (DISQUALIFIED / SUCCESS / ERROR / PARKED): nu mai e candidat de requeue.
                                             } else {
                                                 log.info("requeue skipped, activity no longer requeueable id={}, version={}, status={}, code={}, processPartitionKey={}, processId={}", freshEventActivity.getId(), freshEventActivity.getVersion(), status, freshEventActivity.getCode(), freshEventActivity.getProcessPartitionKey(), freshEventActivity.getProcessId());
                                             }
@@ -405,19 +411,23 @@ public class EventOrchestratorServiceImpl implements EventOrchestratorService {
         EventOrchestratorConfig.EventOrchestratorOrphanConfiguration orphanConfiguration = this.config.getThreadPoolExecutor().getOrphan();
         int size = orphanConfiguration.getSchedulerCapacityThreshold();
         this.scheduler[orphanIndex].scheduleAtFixedRate(() -> {
-                    log.trace("Start scheduler [{}] orphan monitor", orphanIndex);
                     try {
-                        int processed = eventActivityService.requeueOrphanQueuedWithDeadNode(size);
-                        int remaining = size - processed;
-                        if (remaining > 0 && isOldQueuedRecycleEnabled()) {
-                            Date oldQueuedBefore = Date.from(java.time.Instant.now().minus(orphanConfiguration.getRecycle().getOldQueueDuration()));
-                            eventActivityService.requeueOrphanOldQueuedWithActiveNode(remaining, oldQueuedBefore);
+                        boolean executed = orphanMonitorLock.tryExecute(() -> {
+                            log.trace("Start scheduler [{}] orphan monitor", orphanIndex);
+                            int processed = eventActivityService.requeueOrphanQueuedWithDeadNode(size);
+                            int remaining = size - processed;
+                            if (remaining > 0 && isOldQueuedRecycleEnabled()) {
+                                Date oldQueuedBefore = Date.from(java.time.Instant.now().minus(orphanConfiguration.getRecycle().getOldQueueDuration()));
+                                eventActivityService.requeueOrphanOldQueuedWithActiveNode(remaining, oldQueuedBefore);
+                            }
+                            log.trace("End scheduler [{}] orphan monitor", orphanIndex);
+                        });
+                        if (!executed) {
+                            log.trace("Skip scheduler [{}] orphan monitor - lock not acquired", orphanIndex);
                         }
-                        log.trace("End scheduler [{}] orphan monitor", orphanIndex);
                     } catch (Exception e) {
-                        log.error("Error scheduler [{}] orphan monitor. {}", orphanIndex, Throwables.getStackTraceAsString(e), e);
+                        log.error("Error scheduler [{}] orphan monitor", orphanIndex, e);
                     }
-
                 },
                 orphanConfiguration.getSchedulerInitDelay(),
                 orphanConfiguration.getSchedulerPeriod(),
